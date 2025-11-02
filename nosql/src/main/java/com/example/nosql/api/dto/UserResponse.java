@@ -3,6 +3,12 @@ package com.example.nosql.api.dto;
 import jakarta.validation.constraints.NotBlank;
 
 public class UserResponse {
-    @NotBlank public String id;
-    @NotBlank public String username;
+    public String id;
+    public String username;
+    //
+    public String getId() {return id;}
+    public String getUsername() {return username;}
+    //
+    public void setId(String id) {this.id = id;}
+    public void setUsername(String username) {this.username = username;}
 }

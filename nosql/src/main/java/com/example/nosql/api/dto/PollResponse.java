@@ -15,6 +15,15 @@ public class PollResponse {
     private List<String> options;
     private String authorId;
     //
+    public String getId() {return id;}
+    public String getTitle() {return title;}
+    public String getDescription() {return description;}
+    public String getStatus() {return status;}
+    public LocalDateTime getDateStart() {return dateStart;}
+    public LocalDateTime getDateEnd() {return dateEnd;}
+    public List<String> getOptions() {return options;}
+    public String getAuthorId() {return authorId;}
+    //
     public void setId(String id) {this.id = id;}
     public void setTitle(String title) {this.title = title;}
     public void setDescription(String description) {this.description = description;}
