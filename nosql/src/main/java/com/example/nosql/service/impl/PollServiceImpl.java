@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 @Service
 public class PollServiceImpl implements PollService {
-    private PollRepository repo;
+    private final PollRepository repo;
     //
     public PollServiceImpl(PollRepository repo) {
         this.repo = repo;
