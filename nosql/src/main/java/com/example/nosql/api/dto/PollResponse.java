@@ -13,7 +13,7 @@ public class PollResponse {
     @NotNull public LocalDateTime dateStart;
     @NotNull public LocalDateTime dateEnd;
     @Size(min = 2) public List<@NotBlank String> options;
-    @NotBlank public String userId;
+    @NotBlank public String authorId;
     //
     public void setId(String id) {this.id = id;}
     public void setTitle(String title) {this.title = title;}
@@ -22,5 +22,5 @@ public class PollResponse {
     public void setDateStart(LocalDateTime dateStart) {this.dateStart = dateStart;}
     public void setDateEnd(LocalDateTime dateEnd) {this.dateEnd = dateEnd;}
     public void setOptions(List<@NotBlank String> options) {this.options = options;}
-    public void setUserId(String userId) {this.userId = userId;}
+    public void setAuthorId(String authorId) {this.authorId = authorId;}
 }
