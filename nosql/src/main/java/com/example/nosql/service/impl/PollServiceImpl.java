@@ -39,10 +39,10 @@ public class PollServiceImpl implements PollService {
     }
     //
     @Override
-    public Page<Poll> listContained(LocalDateTime dateStart, LocalDateTime dateEnd, Pageable pageable) {
+    public Page<Poll> listOverlapping(LocalDateTime dateStart, LocalDateTime dateEnd, Pageable pageable) {
         if (dateStart == null || dateEnd == null || dateStart.isAfter(dateEnd)) {
             return Page.empty(pageable);
         }
-        return repo.findContained(dateStart, dateEnd, pageable);
+        return repo.findOverlapping(dateStart, dateEnd, pageable);
     }
 }

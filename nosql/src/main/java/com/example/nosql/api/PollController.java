@@ -53,8 +53,8 @@ public class PollController {
         return page.map(mapper::toResponse);
     }
     //
-    @GetMapping("/contained")
-    public Page<PollResponse> listContained(
+    @GetMapping("/overlapped")
+    public Page<PollResponse> listOverlapping(
             @RequestParam("from")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime from,
@@ -66,7 +66,7 @@ public class PollController {
             @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        Page<Poll> page = service.listContained(from, to, pageable);
+        Page<Poll> page = service.listOverlapping(from, to, pageable);
         return page.map(mapper::toResponse);
     }
 }

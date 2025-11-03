@@ -13,6 +13,6 @@ public interface PollRepository extends MongoRepository<Poll, String> {
     //
     Page<Poll> findByStatus(String status, Pageable pageable);
     //
-    @Query("{ $and: [ { 'dateStart': { $gte: ?0 } }, { 'dateEnd': { $lte: ?1 } } ] }")
-    Page<Poll> findContained(LocalDateTime dateStart, LocalDateTime dateEnd, Pageable pageable);
+    @Query("{ $and: [ { 'dateStart': { $lte: ?1 } }, { 'dateEnd': { $gte: ?0 } } ] }")
+    Page<Poll> findOverlapping(LocalDateTime dateStart, LocalDateTime dateEnd, Pageable pageable);
 }
