@@ -31,6 +31,14 @@ public class PollServiceImpl implements PollService {
     }
     //
     @Override
+    public Page<Poll> searchByAuthorName(String query, Pageable pageable) {
+        if (query == null || query.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return repo.findByAuthorNameContainingIgnoreCase(query.trim(), pageable);
+    }
+    //
+    @Override
     public Page<Poll> listByStatus(String status, Pageable pageable) {
         if (status == null || status.isEmpty()) {
             return Page.empty(pageable);
