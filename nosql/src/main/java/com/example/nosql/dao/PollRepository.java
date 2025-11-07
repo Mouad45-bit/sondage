@@ -3,6 +3,7 @@ package com.example.nosql.dao;
 import com.example.nosql.model.Poll;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.Repository;
@@ -22,7 +23,7 @@ public interface PollRepository extends Repository<Poll, String> {
             "{ $match: { username: ?0 } }",
             "{ $lookup: { from: 'polls', localField: 'id', foreignField: 'authorId', as: 'polls' } }"
     })
-    Page<Poll> findByAuthorNameContainingIgnoreCase(String q, Pageable pageable);
+    Slice<Poll> findByAuthorNameContainingIgnoreCase(String q, Pageable pageable);
     //
     @Query(value = "{ 'status': ?0 }")
     Page<Poll> findByStatus(String status, Pageable pageable);

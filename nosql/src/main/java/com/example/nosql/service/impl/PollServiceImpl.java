@@ -5,6 +5,7 @@ import com.example.nosql.model.Poll;
 import com.example.nosql.service.PollService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -31,7 +32,7 @@ public class PollServiceImpl implements PollService {
     }
     //
     @Override
-    public Page<Poll> searchByAuthorName(String query, Pageable pageable) {
+    public Slice<Poll> searchByAuthorName(String query, Pageable pageable) {
         if (query == null || query.isEmpty()) {
             return Page.empty(pageable);
         }

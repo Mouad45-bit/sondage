@@ -6,6 +6,7 @@ import com.example.nosql.model.Poll;
 import com.example.nosql.service.PollService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -42,12 +43,13 @@ public class PollController {
         Page<Poll> page = service.searchByTitle(title, pageable);
         return page.map(mapper::toResponse);
     }
-    public Page<PollResponse> searchByAuthorName(
+    @GetMapping("/search")
+    public Slice<PollResponse> searchByAuthorName(
             @RequestParam String author,
             @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        Page<Poll> page = service.searchByAuthorName(author, pageable);
+        Slice<Poll> page = service.searchByAuthorName(author, pageable);
         return page.map(mapper::toResponse);
     }
     //
