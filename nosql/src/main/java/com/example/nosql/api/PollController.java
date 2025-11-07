@@ -34,7 +34,7 @@ public class PollController {
         return page.map(mapper::toResponse);
     }
     //
-    @GetMapping("/search")
+    @GetMapping(value = "/search", params = { "title", "!author" })
     public Page<PollResponse> searchByTitle(
             @RequestParam String title,
             @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
@@ -43,7 +43,7 @@ public class PollController {
         Page<Poll> page = service.searchByTitle(title, pageable);
         return page.map(mapper::toResponse);
     }
-    @GetMapping("/search")
+    @GetMapping(value = "/search", params = { "author", "!title" })
     public Slice<PollResponse> searchByAuthorName(
             @RequestParam String author,
             @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
