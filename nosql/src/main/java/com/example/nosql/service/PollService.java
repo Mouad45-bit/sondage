@@ -11,6 +11,8 @@ public interface PollService {
     //
     Page<Poll> searchByTitle(String query, Pageable pageable);
     //
+    Page<Poll> searchByAuthorName(String query, Pageable pageable);
+    //
     Page<Poll> listByStatus(String status, Pageable pageable);
     //
     Page<Poll> listOverlapping(LocalDateTime dateStart, LocalDateTime dateEnd, Pageable pageable);
