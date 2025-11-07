@@ -35,11 +35,19 @@ public class PollController {
     //
     @GetMapping("/search")
     public Page<PollResponse> searchByTitle(
-            @RequestParam String query,
+            @RequestParam String title,
             @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        Page<Poll> page = service.searchByTitle(query, pageable);
+        Page<Poll> page = service.searchByTitle(title, pageable);
+        return page.map(mapper::toResponse);
+    }
+    public Page<PollResponse> searchByAuthorName(
+            @RequestParam String author,
+            @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        Page<Poll> page = service.searchByAuthorName(author, pageable);
         return page.map(mapper::toResponse);
     }
     //
