@@ -20,8 +20,19 @@ public interface PollRepository extends Repository<Poll, String> {
     Page<Poll> findByTitleContainingIgnoreCase(String q, Pageable pageable);
     //
     @Aggregation(pipeline = {
-            "{ $match: { username: ?0 } }",
-            "{ $lookup: { from: 'polls', localField: 'id', foreignField: 'authorId', as: 'polls' } }"
+            "{ $lookup: { " +
+                    "from: 'users', " +
+                    "let:  { aid: '$authorId' }, " +
+                    "pipeline: [ " +
+                      "{ $match: { $expr: { $eq: ['$_id', '$$aid'] } } }, " +
+                      "{ $project: { _id: 1, username: 1 } } " +
+                    "], " +
+                    "as:  'owner' } }",
+            "{ $unwind: { path:  '$owner', preserveNullAndEmptyArrays:  true } }",
+            "{ $match: { 'owner.username': { $regex: ?0, $options: 'i' } } }",
+            "{ $project: { " +
+                    "_id: 1, title: 1, description: 1, status: 1, " +
+                    "dateStart: 1, dateEnd: 1, options: 1, authorId: 1 } }"
     })
     Slice<Poll> findByAuthorNameContainingIgnoreCase(String q, Pageable pageable);
     //
