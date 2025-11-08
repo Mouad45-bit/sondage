@@ -17,4 +17,6 @@ public interface PollService {
     Page<Poll> listByStatus(String status, Pageable pageable);
     //
     Page<Poll> listOverlapping(LocalDateTime dateStart, LocalDateTime dateEnd, Pageable pageable);
+    //
+    Page<Poll> listByAuthorId(String authorId, Pageable pageable);
 }
