@@ -3,6 +3,7 @@ package com.example.nosql.service;
 import com.example.nosql.api.dto.PollRequest;
 import com.example.nosql.api.dto.PollResponse;
 import com.example.nosql.model.Poll;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -22,5 +23,5 @@ public interface PollService {
     //
     Page<Poll> listByAuthorId(String authorId, Pageable pageable);
     //
-    PollResponse create(PollRequest poll);
+    PollResponse create(@NotNull PollRequest poll);
 }
