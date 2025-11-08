@@ -90,7 +90,7 @@ public class PollServiceImpl implements PollService {
                 .toList();
         //
         if (optionsDistinct.size() < 2) {
-            throw new IllegalArgumentException("options must contain at least 2 options");
+            throw new IllegalArgumentException("Options must contain at least 2 values");
         }
         //
         LocalDateTime now = LocalDateTime.now();
@@ -141,6 +141,42 @@ public class PollServiceImpl implements PollService {
             poll.setDescription(newPoll.getDescription());
         }
         //
-        return new PollResponse();
+        if (newPoll.getOptions() != null) {
+            List<String> optionsNormalized = newPoll.getOptions().stream()
+                    .map(s -> s.trim().replaceAll("\\s+", " "))
+                    .filter(s -> !s.isBlank())
+                    .toList();
+            //
+            List<String> optionsDistinct = optionsNormalized.stream()
+                    .collect(LinkedHashSet<String>::new,
+                            LinkedHashSet<String>::add,
+                            LinkedHashSet<String>::addAll)
+                    .stream().toList();
+            //
+            if (optionsDistinct.size() < 2) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Options must contain at least 2 values");
+            }
+            //
+            if (optionsDistinct.stream().anyMatch(s -> s.length() > 80)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Options must be less than 80 characters");
+            }
+            //
+            poll.setDescription(newPoll.getDescription());
+        }
+        //
+        // TODO: dateStart, dateEnd & status
+        //
+        Poll saved = repo.save(poll);
+        //
+        return new PollResponse(
+                saved.getId(),
+                saved.getTitle(),
+                saved.getDescription(),
+                saved.getStatus(),
+                saved.getDateStart(),
+                saved.getDateEnd(),
+                saved.getOptions(),
+                saved.getAuthorId()
+        );
     }
 }
