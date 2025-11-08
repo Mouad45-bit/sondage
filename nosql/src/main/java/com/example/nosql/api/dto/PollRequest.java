@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class PollRequest {
+    @NotBlank private String id;
     @NotBlank @Size(min = 3, max = 120) private String title;
     @Size(max = 500) private String description;
     @NotNull private LocalDateTime dateStart;
@@ -18,6 +19,7 @@ public class PollRequest {
         return dateStart != null && dateEnd != null && dateStart.isBefore(dateEnd);
     }
     //
+    public String getId() { return id; }
     public String getTitle() { return title; }
     public String getDescription() { return description; }
     public LocalDateTime getDateStart() { return dateStart; }
