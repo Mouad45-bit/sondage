@@ -1,6 +1,6 @@
 package com.example.nosql.service.impl;
 
-import com.example.nosql.api.dto.PollRequest;
+import com.example.nosql.api.dto.CreatePollRequest;
 import com.example.nosql.api.dto.PollResponse;
 import com.example.nosql.dao.PollRepository;
 import com.example.nosql.model.Poll;
@@ -69,7 +69,7 @@ public class PollServiceImpl implements PollService {
     }
     //
     @Override
-    public PollResponse create(@NotNull PollRequest poll) {
+    public PollResponse create(@NotNull CreatePollRequest poll) {
         if (!poll.isStartBeforeEnd()) {
             throw new IllegalArgumentException("dateStart must be before dateEnd");
         }

@@ -1,6 +1,6 @@
 package com.example.nosql.service;
 
-import com.example.nosql.api.dto.PollRequest;
+import com.example.nosql.api.dto.CreatePollRequest;
 import com.example.nosql.api.dto.PollResponse;
 import com.example.nosql.model.Poll;
 import jakarta.validation.constraints.NotNull;
@@ -23,5 +23,5 @@ public interface PollService {
     //
     Page<Poll> listByAuthorId(String authorId, Pageable pageable);
     //
-    PollResponse create(@NotNull PollRequest poll);
+    PollResponse create(@NotNull CreatePollRequest poll);
 }

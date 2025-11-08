@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class PollRequest {
+public class CreatePollRequest {
     @NotBlank private String id;
     @NotBlank @Size(min = 3, max = 120) private String title;
     @Size(max = 500) private String description;

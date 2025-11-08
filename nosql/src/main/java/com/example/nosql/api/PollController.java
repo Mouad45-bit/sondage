@@ -1,6 +1,6 @@
 package com.example.nosql.api;
 
-import com.example.nosql.api.dto.PollRequest;
+import com.example.nosql.api.dto.CreatePollRequest;
 import com.example.nosql.api.dto.PollResponse;
 import com.example.nosql.api.mapper.PollMapper;
 import com.example.nosql.model.Poll;
@@ -95,7 +95,7 @@ public class PollController {
     }
     //
     @PostMapping
-    public ResponseEntity<PollResponse> create(@Valid @RequestBody PollRequest poll) {
+    public ResponseEntity<PollResponse> create(@Valid @RequestBody CreatePollRequest poll) {
         PollResponse resp = service.create(poll);
         //
         return ResponseEntity
