@@ -41,4 +41,7 @@ public interface PollRepository extends Repository<Poll, String> {
     //
     @Query(value = "{ $and: [ { 'dateStart': { $lte: ?1 } }, { 'dateEnd': { $gte: ?0 } } ] }")
     Page<Poll> findOverlapping(LocalDateTime dateStart, LocalDateTime dateEnd, Pageable pageable);
+    //
+    @Query(value = "{ 'authorId': ?0 }")
+    Page<Poll> findByAuthorId(String authorId, Pageable pageable);
 }
