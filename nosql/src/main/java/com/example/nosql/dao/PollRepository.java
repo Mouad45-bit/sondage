@@ -44,4 +44,6 @@ public interface PollRepository extends Repository<Poll, String> {
     //
     @Query(value = "{ 'authorId': ?0 }")
     Page<Poll> findByAuthorId(String authorId, Pageable pageable);
+    //
+    <S extends Poll> S save(S entity);
 }
