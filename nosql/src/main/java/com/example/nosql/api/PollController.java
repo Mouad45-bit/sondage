@@ -2,6 +2,7 @@ package com.example.nosql.api;
 
 import com.example.nosql.api.dto.CreatePollRequest;
 import com.example.nosql.api.dto.PollResponse;
+import com.example.nosql.api.dto.UpdatePollRequest;
 import com.example.nosql.api.mapper.PollMapper;
 import com.example.nosql.model.Poll;
 import com.example.nosql.service.PollService;
@@ -101,5 +102,14 @@ public class PollController {
         return ResponseEntity
                 .created(URI.create("/api/polls/" + resp.getId()))
                 .body(resp);
+    }
+    @PatchMapping("/{id}")
+    public ResponseEntity<PollResponse> update(
+            @PathVariable String id,
+            @Valid @RequestBody UpdatePollRequest newPoll
+    ) {
+        PollResponse resp = service.update(id, newPoll);
+        //
+        return ResponseEntity.ok(resp);
     }
 }
