@@ -79,4 +79,14 @@ public class PollController {
         Page<Poll> page = service.listOverlapping(from, to, pageable);
         return page.map(mapper::toResponse);
     }
+    //
+    @GetMapping("/author/{authorId}")
+    public Page<PollResponse> listByAuthorId(
+            @PathVariable String authorId,
+            @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        Page<Poll> page = service.listByAuthorId(authorId, pageable);
+        return page.map(mapper::toResponse);
+    }
 }
