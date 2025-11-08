@@ -2,6 +2,7 @@ package com.example.nosql.service.impl;
 
 import com.example.nosql.api.dto.CreatePollRequest;
 import com.example.nosql.api.dto.PollResponse;
+import com.example.nosql.api.dto.UpdatePollRequest;
 import com.example.nosql.dao.PollRepository;
 import com.example.nosql.model.Poll;
 import com.example.nosql.service.PollService;
@@ -9,7 +10,9 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
@@ -123,5 +126,21 @@ public class PollServiceImpl implements PollService {
                 saved.getOptions(),
                 saved.getAuthorId()
         );
+    }
+    //
+    public PollResponse update(String id, @NotNull UpdatePollRequest newPoll) {
+        Poll poll = repo.findById(id).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Poll not found")
+        );
+        //
+        if (!"DRAFT".equals(poll.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Update only for drafts");
+        }
+        //
+        if (newPoll.getDescription() != null) {
+            poll.setDescription(newPoll.getDescription());
+        }
+        //
+        return new PollResponse();
     }
 }
