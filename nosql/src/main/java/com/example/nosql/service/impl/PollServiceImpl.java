@@ -54,4 +54,12 @@ public class PollServiceImpl implements PollService {
         }
         return repo.findOverlapping(dateStart, dateEnd, pageable);
     }
+    //
+    @Override
+    public Page<Poll> listByAuthorId(String authorId, Pageable pageable) {
+        if (authorId == null || authorId.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return repo.findByAuthorId(authorId, pageable);
+    }
 }
