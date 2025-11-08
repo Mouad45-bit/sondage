@@ -10,11 +10,15 @@ import org.springframework.data.repository.Repository;
 
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public interface PollRepository extends Repository<Poll, String> {
     //
     @Query(value = "{}")
     Page<Poll> findAll(Pageable pageable);
+    //
+    @Query(value = "{ '_id': ?0 }")
+    Optional<Poll> findById(String id);
     //
     @Query(value = "{ 'title': { $regex: ?0, $options: 'i' } }")
     Page<Poll> findByTitleContainingIgnoreCase(String q, Pageable pageable);
