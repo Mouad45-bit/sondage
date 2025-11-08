@@ -1,17 +1,21 @@
 package com.example.nosql.api;
 
+import com.example.nosql.api.dto.PollRequest;
 import com.example.nosql.api.dto.PollResponse;
 import com.example.nosql.api.mapper.PollMapper;
 import com.example.nosql.model.Poll;
 import com.example.nosql.service.PollService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 
 @RestController
@@ -88,5 +92,14 @@ public class PollController {
     ) {
         Page<Poll> page = service.listByAuthorId(authorId, pageable);
         return page.map(mapper::toResponse);
+    }
+    //
+    @PostMapping
+    public ResponseEntity<PollResponse> create(@Valid @RequestBody PollRequest poll) {
+        PollResponse resp = service.create(poll);
+        //
+        return ResponseEntity
+                .created(URI.create("/api/polls/" + resp.getId()))
+                .body(resp);
     }
 }
