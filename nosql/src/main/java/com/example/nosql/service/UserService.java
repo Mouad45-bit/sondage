@@ -10,13 +10,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+
 @Service
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
     private final UserRepository repo;
     private final PasswordEncoder encoder;
-    private final PasswordEncoder passwordEncoder;
-
     //
     public User register(RegisterRequest req) {
         String username = req.username().toLowerCase().trim();
@@ -27,7 +27,7 @@ public class UserService implements UserDetailsService {
         //
         User user = User.builder()
                 .username(username)
-                .passwordHash(passwordEncoder.encode(req.passwordHash()))
+                .passwordHash(encoder.encode(req.password()))
                 .build();
         return repo.save(user);
     }
@@ -42,7 +42,7 @@ public class UserService implements UserDetailsService {
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPasswordHash(),
-                null
+                Collections.emptyList()
         );
     }
 }
