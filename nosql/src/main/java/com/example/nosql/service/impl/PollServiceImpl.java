@@ -179,4 +179,15 @@ public class PollServiceImpl implements PollService {
                 saved.getAuthorId()
         );
     }
+    //
+    public void delete(String id) {
+        Poll poll = repo.findById(id).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Poll not found"));
+        //
+        if (!"DRAFT".equals(poll.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Delete only for drafts");
+        }
+        //
+        repo.delete(poll);
+    }
 }
