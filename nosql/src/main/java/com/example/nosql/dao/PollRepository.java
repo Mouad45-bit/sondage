@@ -50,4 +50,6 @@ public interface PollRepository extends Repository<Poll, String> {
     Page<Poll> findByAuthorId(String authorId, Pageable pageable);
     //
     <S extends Poll> S save(S entity);
+    //
+    void delete(Poll entity);
 }
