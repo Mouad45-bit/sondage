@@ -27,4 +27,6 @@ public interface PollService {
     PollResponse create(@NotNull CreatePollRequest poll);
     //
     PollResponse update(String id, @NotNull UpdatePollRequest newPoll);
+    //
+    void delete(String id);
 }
