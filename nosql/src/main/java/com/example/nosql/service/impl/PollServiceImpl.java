@@ -73,6 +73,12 @@ public class PollServiceImpl implements PollService {
     //
     @Override
     public PollResponse create(@NotNull CreatePollRequest poll) {
+        //
+        LocalDateTime minStart = LocalDateTime.now().plusHours(1);
+        //
+        if (poll.getDateStart().isBefore(minStart)) {
+            throw new IllegalArgumentException("dateStart must be at least 1h from now");
+        }
         if (!poll.isStartBeforeEnd()) {
             throw new IllegalArgumentException("dateStart must be before dateEnd");
         }
@@ -93,26 +99,15 @@ public class PollServiceImpl implements PollService {
             throw new IllegalArgumentException("Options must contain at least 2 values");
         }
         //
-        LocalDateTime now = LocalDateTime.now();
-        String status;
-        if (now.isBefore(poll.getDateStart())) {
-            status = "DRAFT";
-        } else if (!now.isAfter(poll.getDateEnd())) {
-            status = "OPEN";
-        } else {
-            status = "CLOSED";
-        }
-        //
-        Poll pollToSave = new Poll(
-                poll.getId(),
-                poll.getTitle().trim(),
-                (poll.getDescription() == null ? null : poll.getDescription().trim()),
-                status,
-                poll.getDateStart(),
-                poll.getDateEnd(),
-                optionsDistinct,
-                poll.getAuthorId()
-        );
+        Poll pollToSave = Poll.builder()
+                .title(poll.getTitle())
+                .description(poll.getDescription())
+                .status("DRAFT")
+                .dateStart(poll.getDateStart())
+                .dateEnd(poll.getDateEnd())
+                .options(optionsNormalized)
+                .authorId(poll.getAuthorId())
+                .build();
         //
         Poll saved = repo.save(pollToSave);
         //
