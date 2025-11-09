@@ -12,4 +12,6 @@ public interface UserRepository extends Repository<User, String> {
     //
     @Query(value = "{ 'username': { $regex: '^?0$', $options: 'i' } }", exists = true)
     boolean existsByUsername(String username);
+    //
+    <S extends User> S save(S entity);
 }
