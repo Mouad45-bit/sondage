@@ -112,4 +112,10 @@ public class PollController {
         //
         return ResponseEntity.ok(resp);
     }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        service.delete(id);
+        //
+        return ResponseEntity.noContent().build();
+    }
 }
