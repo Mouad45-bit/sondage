@@ -19,7 +19,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final JwtAuthFilter jwtAuthFilter;
     //
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -42,7 +41,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http,
-            AuthenticationProvider authProvider
+            AuthenticationProvider authProvider,
+            JwtAuthFilter jwtAuthFilter
     ) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
