@@ -159,7 +159,21 @@ public class PollServiceImpl implements PollService {
             poll.setDescription(newPoll.getDescription());
         }
         //
-        // TODO: dateStart, dateEnd & status
+        if (newPoll.getDateStart() != null) {
+            LocalDateTime minStart = LocalDateTime.now().plusHours(1);
+            //
+            if (newPoll.getDateStart().isBefore(minStart)) {
+                throw new IllegalArgumentException("dateStart must be at least 1h from now");
+            } else {
+                poll.setDateStart(newPoll.getDateStart());
+            }
+        }
+        //
+        if (newPoll.getDateEnd() != null) {
+            if (!newPoll.getDateEnd().isBefore(poll.getDateStart())) {
+                poll.setDateEnd(newPoll.getDateEnd());
+            }
+        }
         //
         Poll saved = repo.save(poll);
         //
