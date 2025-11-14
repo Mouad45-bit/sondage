@@ -72,7 +72,7 @@ public class PollServiceImpl implements PollService {
     }
     //
     @Override
-    public PollResponse create(@NotNull CreatePollRequest poll) {
+    public PollResponse create(@NotNull CreatePollRequest poll, String authorId) {
         //
         LocalDateTime minStart = LocalDateTime.now().plusHours(1);
         //
@@ -106,7 +106,7 @@ public class PollServiceImpl implements PollService {
                 .dateStart(poll.getDateStart())
                 .dateEnd(poll.getDateEnd())
                 .options(optionsNormalized)
-                .authorId(poll.getAuthorId())
+                .authorId(authorId)
                 .build();
         //
         Poll saved = repo.save(pollToSave);
