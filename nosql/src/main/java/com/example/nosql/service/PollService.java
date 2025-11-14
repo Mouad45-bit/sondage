@@ -24,7 +24,7 @@ public interface PollService {
     //
     Page<Poll> listByAuthorId(String authorId, Pageable pageable);
     //
-    PollResponse create(@NotNull CreatePollRequest poll);
+    PollResponse create(@NotNull CreatePollRequest poll, String authorId);
     //
     PollResponse update(String id, @NotNull UpdatePollRequest newPoll);
     //
