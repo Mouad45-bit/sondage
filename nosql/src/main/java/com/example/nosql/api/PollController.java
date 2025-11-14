@@ -6,6 +6,7 @@ import com.example.nosql.api.dto.UpdatePollRequest;
 import com.example.nosql.api.mapper.PollMapper;
 import com.example.nosql.model.Poll;
 import com.example.nosql.service.PollService;
+import com.example.nosql.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -24,10 +26,13 @@ import java.time.LocalDateTime;
 public class PollController {
     private final PollService service;
     private final PollMapper mapper;
+    private final UserService userService;
+
     //
-    public PollController(PollService service, PollMapper mapper) {
+    public PollController(PollService service, PollMapper mapper, UserService userService) {
         this.service = service;
         this.mapper = mapper;
+        this.userService = userService;
     }
     //
     @GetMapping
@@ -96,8 +101,12 @@ public class PollController {
     }
     //
     @PostMapping
-    public ResponseEntity<PollResponse> create(@Valid @RequestBody CreatePollRequest poll) {
-        PollResponse resp = service.create(poll);
+    public ResponseEntity<PollResponse> create(
+            @Valid @RequestBody CreatePollRequest poll,
+            @AuthenticationPrincipal org.springframework.security.core.userdetails.User user
+    ) {
+        String authorId = userService.getByUsernameEntity(user.getUsername()).getId();
+        PollResponse resp = service.create(poll, authorId);
         //
         return ResponseEntity
                 .created(URI.create("/api/polls/" + resp.getId()))
