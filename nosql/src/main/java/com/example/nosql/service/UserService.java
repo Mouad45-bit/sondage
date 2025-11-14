@@ -45,4 +45,9 @@ public class UserService implements UserDetailsService {
                 Collections.emptyList()
         );
     }
+    //
+    public User getByUsernameEntity(String username) {
+        return repo.findByUsername(username.toLowerCase().trim())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
 }
