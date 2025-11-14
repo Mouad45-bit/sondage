@@ -12,7 +12,6 @@ public class CreatePollRequest {
     @NotNull private LocalDateTime dateStart;
     @NotNull private LocalDateTime dateEnd;
     @Size(min = 2) private List<@NotBlank @Size(max = 80) String> options;
-    @NotBlank private String authorId;
     //
     @AssertTrue(message="dateStart must be before dateEnd")
     public boolean isStartBeforeEnd() {
@@ -25,5 +24,4 @@ public class CreatePollRequest {
     public LocalDateTime getDateStart() { return dateStart; }
     public LocalDateTime getDateEnd() { return dateEnd; }
     public List<String> getOptions() { return options; }
-    public String getAuthorId() { return authorId; }
 }
