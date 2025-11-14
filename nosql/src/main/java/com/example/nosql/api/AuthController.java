@@ -27,7 +27,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest req) {
         User user = userService.register(req);
-        String token = jwtService.generateToken(user.getUsername());
+        String token = jwtService.generateToken(user);
         //
         return ResponseEntity.ok(new AuthResponse(token));
     }
@@ -38,10 +38,14 @@ public class AuthController {
                 req.username(),
                 req.password()
         );
+        var auth = authManager.authenticate(authToken);
         //
-        authManager.authenticate(authToken);
+        var principal = (org.springframework.security.core.userdetails.User) auth.getPrincipal();
+        var username = principal.getUsername();
         //
-        String token = jwtService.generateToken(req.username().toLowerCase().trim());
+        User user = userService.getByUsernameEntity(username);
+        //
+        String token = jwtService.generateToken(user);
         //
         return ResponseEntity.ok(new AuthResponse(token));
     }
