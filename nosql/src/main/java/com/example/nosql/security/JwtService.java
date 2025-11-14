@@ -1,5 +1,6 @@
 package com.example.nosql.security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -8,8 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
-import java.util.Base64;
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -25,8 +26,10 @@ public class JwtService {
     //
     public String generateToken(String username) {
         long now = System.currentTimeMillis();
+        String jti = UUID.randomUUID().toString();
         //
         return Jwts.builder()
+                .setId(jti)
                 .setSubject(username)
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(now + 1000L * 60 * 60 * 24))
@@ -34,8 +37,18 @@ public class JwtService {
                 .compact();
     }
     //
-    public String extractUsername(String token) {
+    private Claims parse(String token) {
         return Jwts.parserBuilder().setSigningKey(key).build()
-                .parseClaimsJws(token).getBody().getSubject();
+                .parseClaimsJws(token).getBody();
+    }
+    //
+    public String extractUsername(String token) {
+        return parse(token).getSubject();
+    }
+    public String extractJti(String token) {
+        return parse(token).getId();
+    }
+    public Date extractExpiration(String token) {
+        return parse(token).getExpiration();
     }
 }
