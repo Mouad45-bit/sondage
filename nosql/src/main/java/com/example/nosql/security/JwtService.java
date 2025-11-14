@@ -1,5 +1,6 @@
 package com.example.nosql.security;
 
+import com.example.nosql.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -24,13 +25,14 @@ public class JwtService {
         this.key = Keys.hmacShaKeyFor(decodeBase64);
     }
     //
-    public String generateToken(String username) {
+    public String generateToken(User u) {
         long now = System.currentTimeMillis();
         String jti = UUID.randomUUID().toString();
         //
         return Jwts.builder()
                 .setId(jti)
-                .setSubject(username)
+                .setSubject(u.getUsername())
+                .claim("uid", u.getId())
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(now + 1000L * 60 * 60 * 24))
                 .signWith(key, SignatureAlgorithm.HS256)
