@@ -1,5 +1,6 @@
 package com.example.nosql.dao;
 
+import com.example.nosql.model.Poll;
 import com.example.nosql.model.Vote;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.Repository;
@@ -22,4 +23,6 @@ public interface VoteRepository extends Repository<Vote, String> {
             count = true
     )
     long countByPollIdAndOptionIndex(String pollId, String optionIndex);
+    //
+    <S extends Vote> S save(S entity);
 }
