@@ -8,6 +8,7 @@ import com.example.nosql.dao.PollRepository;
 import com.example.nosql.dao.VoteRepository;
 import com.example.nosql.model.Poll;
 import com.example.nosql.model.PollStatus;
+import com.example.nosql.model.User;
 import com.example.nosql.model.Vote;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,10 +22,12 @@ import java.util.List;
 public class VoteService {
     private final VoteRepository voteRepository;
     private final PollRepository pollRepository;
+    private final UserService userService;
     //
-    public VoteService(VoteRepository voteRepository, PollRepository pollRepository) {
+    public VoteService(VoteRepository voteRepository, PollRepository pollRepository, UserService userService) {
         this.voteRepository = voteRepository;
         this.pollRepository = pollRepository;
+        this.userService = userService;
     }
     //
     public VoteResponse createVote(String pollId, String userId, CreateVoteRequest req) {
@@ -117,12 +120,18 @@ public class VoteService {
         return buildStats(poll);
     }
     //
-    public PollStatsResponse getProgress(String pollId) {
+    public PollStatsResponse getProgress(String pollId, String userId) {
         Poll poll = pollRepository.findById(pollId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Poll not found"));
         //
         if (poll.getStatus() != PollStatus.OPEN) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Poll is not open");
+        }
+        //
+        User user = userService.getById(userId);
+        boolean hasVoted = voteRepository.existsByPollIdAndUserId(pollId, userId);
+        if (!hasVoted) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Should participate in vote");
         }
         //
         return buildStats(poll);
