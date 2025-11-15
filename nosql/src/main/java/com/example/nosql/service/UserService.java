@@ -50,4 +50,9 @@ public class UserService implements UserDetailsService {
         return repo.findByUsername(username.toLowerCase().trim())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
+    //
+    public User getById(String id) {
+        return repo.findById(id).orElseThrow(() ->
+                new UsernameNotFoundException("User not found"));
+    }
 }
