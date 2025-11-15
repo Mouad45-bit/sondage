@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -115,15 +116,23 @@ public class PollController {
     @PatchMapping("/{id}")
     public ResponseEntity<PollResponse> update(
             @PathVariable String id,
-            @Valid @RequestBody UpdatePollRequest newPoll
+            @Valid @RequestBody UpdatePollRequest newPoll,
+            Authentication auth
     ) {
-        PollResponse resp = service.update(id, newPoll);
+        String currentUserId = (String) auth.getDetails();
+        //
+        PollResponse resp = service.update(id, newPoll, currentUserId);
         //
         return ResponseEntity.ok(resp);
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
-        service.delete(id);
+    public ResponseEntity<Void> delete(
+            @PathVariable String id,
+            Authentication auth
+    ) {
+        String currentUserId = (String) auth.getDetails();
+        //
+        service.delete(id, currentUserId);
         //
         return ResponseEntity.noContent().build();
     }
