@@ -1,7 +1,8 @@
 package com.example.nosql.api.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 
+@AllArgsConstructor
 public class UserResponse {
     public String id;
     public String username;
