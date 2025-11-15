@@ -7,10 +7,12 @@ import com.example.nosql.dao.VoteRepository;
 import com.example.nosql.model.Poll;
 import com.example.nosql.model.Vote;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 
+@Service
 public class VoteService {
     private final VoteRepository voteRepository;
     private final PollRepository pollRepository;
