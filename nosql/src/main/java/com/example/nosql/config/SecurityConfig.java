@@ -54,6 +54,8 @@ public class SecurityConfig {
                         //
                         .requestMatchers(HttpMethod.GET, "/api/polls", "/api/polls/**").permitAll()
                         //
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+                        //
                         .requestMatchers(HttpMethod.POST, "/auth/logout").authenticated()
                         //
                         .requestMatchers(HttpMethod.POST, "/api/polls").authenticated()
