@@ -14,7 +14,7 @@ public class PollMapper {
         response.setId(poll.getId());
         response.setTitle(poll.getTitle());
         response.setDescription(poll.getDescription());
-        response.setStatus(poll.getStatus());
+        response.setStatus(poll.getStatus().name());
         response.setDateStart(poll.getDateStart());
         response.setDateEnd(poll.getDateEnd());
         response.setOptions(poll.getOptions());

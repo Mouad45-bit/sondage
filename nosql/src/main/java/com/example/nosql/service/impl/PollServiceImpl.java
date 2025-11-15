@@ -5,6 +5,7 @@ import com.example.nosql.api.dto.PollResponse;
 import com.example.nosql.api.dto.UpdatePollRequest;
 import com.example.nosql.dao.PollRepository;
 import com.example.nosql.model.Poll;
+import com.example.nosql.model.PollStatus;
 import com.example.nosql.service.PollService;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
@@ -102,7 +103,7 @@ public class PollServiceImpl implements PollService {
         Poll pollToSave = Poll.builder()
                 .title(poll.getTitle())
                 .description(poll.getDescription())
-                .status("DRAFT")
+                .status(PollStatus.DRAFT)
                 .dateStart(poll.getDateStart())
                 .dateEnd(poll.getDateEnd())
                 .options(optionsNormalized)
@@ -115,7 +116,7 @@ public class PollServiceImpl implements PollService {
                 saved.getId(),
                 saved.getTitle(),
                 saved.getDescription(),
-                saved.getStatus(),
+                saved.getStatus().name(),
                 saved.getDateStart(),
                 saved.getDateEnd(),
                 saved.getOptions(),
@@ -186,7 +187,7 @@ public class PollServiceImpl implements PollService {
                 saved.getId(),
                 saved.getTitle(),
                 saved.getDescription(),
-                saved.getStatus(),
+                saved.getStatus().name(),
                 saved.getDateStart(),
                 saved.getDateEnd(),
                 saved.getOptions(),

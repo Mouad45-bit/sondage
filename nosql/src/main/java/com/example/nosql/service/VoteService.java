@@ -29,7 +29,7 @@ public class VoteService {
         //
         LocalDateTime now = LocalDateTime.now();
         //
-        if (!"OPEN".equalsIgnoreCase(poll.getStatus())) {
+        if (!"OPEN".equalsIgnoreCase(poll.getStatus().name())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Poll is not open");
         }
         //
