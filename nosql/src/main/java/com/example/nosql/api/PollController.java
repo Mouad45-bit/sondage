@@ -5,6 +5,7 @@ import com.example.nosql.api.dto.PollResponse;
 import com.example.nosql.api.dto.UpdatePollRequest;
 import com.example.nosql.api.mapper.PollMapper;
 import com.example.nosql.model.Poll;
+import com.example.nosql.model.PollStatus;
 import com.example.nosql.service.PollService;
 import com.example.nosql.service.UserService;
 import jakarta.validation.Valid;
@@ -66,7 +67,7 @@ public class PollController {
     //
     @GetMapping("/status/{status}")
     public Page<PollResponse> listByStatus(
-            @PathVariable String status,
+            @PathVariable PollStatus status,
             @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {

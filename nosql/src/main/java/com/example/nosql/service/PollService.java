@@ -4,6 +4,7 @@ import com.example.nosql.api.dto.CreatePollRequest;
 import com.example.nosql.api.dto.PollResponse;
 import com.example.nosql.api.dto.UpdatePollRequest;
 import com.example.nosql.model.Poll;
+import com.example.nosql.model.PollStatus;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,7 +19,7 @@ public interface PollService {
     //
     Slice<Poll> searchByAuthorName(String query, Pageable pageable);
     //
-    Page<Poll> listByStatus(String status, Pageable pageable);
+    Page<Poll> listByStatus(PollStatus status, Pageable pageable);
     //
     Page<Poll> listOverlapping(LocalDateTime dateStart, LocalDateTime dateEnd, Pageable pageable);
     //

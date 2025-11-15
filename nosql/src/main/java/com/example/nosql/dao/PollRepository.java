@@ -1,6 +1,7 @@
 package com.example.nosql.dao;
 
 import com.example.nosql.model.Poll;
+import com.example.nosql.model.PollStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -41,7 +42,7 @@ public interface PollRepository extends Repository<Poll, String> {
     Slice<Poll> findByAuthorNameContainingIgnoreCase(String q, Pageable pageable);
     //
     @Query(value = "{ 'status': ?0 }")
-    Page<Poll> findByStatus(String status, Pageable pageable);
+    Page<Poll> findByStatus(PollStatus status, Pageable pageable);
     //
     @Query(value = "{ $and: [ { 'dateStart': { $lte: ?1 } }, { 'dateEnd': { $gte: ?0 } } ] }")
     Page<Poll> findOverlapping(LocalDateTime dateStart, LocalDateTime dateEnd, Pageable pageable);

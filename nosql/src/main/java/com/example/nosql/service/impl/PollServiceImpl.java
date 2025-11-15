@@ -49,11 +49,11 @@ public class PollServiceImpl implements PollService {
     }
     //
     @Override
-    public Page<Poll> listByStatus(String status, Pageable pageable) {
-        if (status == null || status.isEmpty()) {
+    public Page<Poll> listByStatus(PollStatus status, Pageable pageable) {
+        if (status == null) {
             return Page.empty(pageable);
         }
-        return repo.findByStatus(status.trim(), pageable);
+        return repo.findByStatus(status, pageable);
     }
     //
     @Override
