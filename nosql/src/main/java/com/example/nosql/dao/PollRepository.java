@@ -11,6 +11,7 @@ import org.springframework.data.repository.Repository;
 
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface PollRepository extends Repository<Poll, String> {
@@ -53,4 +54,10 @@ public interface PollRepository extends Repository<Poll, String> {
     <S extends Poll> S save(S entity);
     //
     void delete(Poll entity);
+    //
+    @Query("{ 'status': ?0, 'dateStart': { $lte: ?1 } }")
+    List<Poll> findDraftsToOpen(PollStatus status, LocalDateTime now);
+    //
+    @Query("{ 'status': ?0, 'dateEnd': { $lt: ?1 } }")
+    List<Poll> findOpensToClose(PollStatus status, LocalDateTime now);
 }
