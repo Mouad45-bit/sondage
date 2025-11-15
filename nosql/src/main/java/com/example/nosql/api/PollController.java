@@ -2,12 +2,14 @@ package com.example.nosql.api;
 
 import com.example.nosql.api.dto.CreatePollRequest;
 import com.example.nosql.api.dto.PollResponse;
+import com.example.nosql.api.dto.PollStatsResponse;
 import com.example.nosql.api.dto.UpdatePollRequest;
 import com.example.nosql.api.mapper.PollMapper;
 import com.example.nosql.model.Poll;
 import com.example.nosql.model.PollStatus;
 import com.example.nosql.service.PollService;
 import com.example.nosql.service.UserService;
+import com.example.nosql.service.VoteService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,15 +28,19 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/polls")
 public class PollController {
-    private final PollService service;
+    private final PollService pollService;
     private final PollMapper mapper;
     private final UserService userService;
+    private final VoteService voteService;
 
     //
-    public PollController(PollService service, PollMapper mapper, UserService userService) {
-        this.service = service;
+    public PollController(
+            PollService pollService, PollMapper mapper, UserService userService, VoteService voteService
+    ) {
+        this.pollService = pollService;
         this.mapper = mapper;
         this.userService = userService;
+        this.voteService = voteService;
     }
     //
     @GetMapping
@@ -42,7 +48,7 @@ public class PollController {
             @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        Page<Poll> page = service.listAll(pageable);
+        Page<Poll> page = pollService.listAll(pageable);
         return page.map(mapper::toResponse);
     }
     //
@@ -52,16 +58,17 @@ public class PollController {
             @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        Page<Poll> page = service.searchByTitle(title, pageable);
+        Page<Poll> page = pollService.searchByTitle(title, pageable);
         return page.map(mapper::toResponse);
     }
+    //
     @GetMapping(value = "/search", params = { "author", "!title" })
     public Slice<PollResponse> searchByAuthorName(
             @RequestParam String author,
             @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        Slice<Poll> page = service.searchByAuthorName(author, pageable);
+        Slice<Poll> page = pollService.searchByAuthorName(author, pageable);
         return page.map(mapper::toResponse);
     }
     //
@@ -71,7 +78,7 @@ public class PollController {
             @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        Page<Poll> page = service.listByStatus(status, pageable);
+        Page<Poll> page = pollService.listByStatus(status, pageable);
         return page.map(mapper::toResponse);
     }
     //
@@ -88,7 +95,7 @@ public class PollController {
             @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        Page<Poll> page = service.listOverlapping(from, to, pageable);
+        Page<Poll> page = pollService.listOverlapping(from, to, pageable);
         return page.map(mapper::toResponse);
     }
     //
@@ -98,7 +105,7 @@ public class PollController {
             @PageableDefault(size = 20, sort = "dateStart", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        Page<Poll> page = service.listByAuthorId(authorId, pageable);
+        Page<Poll> page = pollService.listByAuthorId(authorId, pageable);
         return page.map(mapper::toResponse);
     }
     //
@@ -108,12 +115,13 @@ public class PollController {
             @AuthenticationPrincipal org.springframework.security.core.userdetails.User user
     ) {
         String authorId = userService.getByUsernameEntity(user.getUsername()).getId();
-        PollResponse resp = service.create(poll, authorId);
+        PollResponse resp = pollService.create(poll, authorId);
         //
         return ResponseEntity
                 .created(URI.create("/api/polls/" + resp.getId()))
                 .body(resp);
     }
+    //
     @PatchMapping("/{id}")
     public ResponseEntity<PollResponse> update(
             @PathVariable String id,
@@ -122,10 +130,11 @@ public class PollController {
     ) {
         String currentUserId = (String) auth.getDetails();
         //
-        PollResponse resp = service.update(id, newPoll, currentUserId);
+        PollResponse resp = pollService.update(id, newPoll, currentUserId);
         //
         return ResponseEntity.ok(resp);
     }
+    //
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable String id,
@@ -133,14 +142,26 @@ public class PollController {
     ) {
         String currentUserId = (String) auth.getDetails();
         //
-        service.delete(id, currentUserId);
+        pollService.delete(id, currentUserId);
         //
         return ResponseEntity.noContent().build();
     }
+    //
     @GetMapping("/{id}")
     public ResponseEntity<PollResponse> getById(@PathVariable String id) {
-        Poll poll = service.getById(id);
+        Poll poll = pollService.getById(id);
         PollResponse response = mapper.toResponse(poll);
         return ResponseEntity.ok(response);
+    }
+    //
+    @GetMapping("/{id}/results")
+    public ResponseEntity<PollStatsResponse> getResult(@PathVariable String pollId) {
+        PollStatsResponse stats = voteService.getResults(pollId);
+        return ResponseEntity.ok(stats);
+    }
+    @GetMapping("/{id}/progress")
+    public ResponseEntity<PollStatsResponse> getProgress(@PathVariable String pollId) {
+        PollStatsResponse stats = voteService.getProgress(pollId);
+        return ResponseEntity.ok(stats);
     }
 }
