@@ -52,9 +52,13 @@ public class SecurityConfig {
                         //
                         .requestMatchers("/auth/register", "/auth/login").permitAll()
                         //
-                        .requestMatchers(HttpMethod.GET, "/api/polls", "/api/polls/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/polls", "/api/polls/*").permitAll()
+                        //
+                        .requestMatchers(HttpMethod.GET, "/api/polls/*/results").permitAll()
                         //
                         .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+                        //
+                        .requestMatchers(HttpMethod.GET, "/api/polls/*/progress").authenticated()
                         //
                         .requestMatchers(HttpMethod.POST, "/auth/logout").authenticated()
                         //
