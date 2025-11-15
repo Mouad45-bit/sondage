@@ -123,10 +123,15 @@ public class PollServiceImpl implements PollService {
         );
     }
     //
-    public PollResponse update(String id, @NotNull UpdatePollRequest newPoll) {
+    public PollResponse update(String id, @NotNull UpdatePollRequest newPoll, String authorId) {
         Poll poll = repo.findById(id).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Poll not found")
         );
+        //
+        if (!poll.getAuthorId().equals(authorId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You are not authorized to update this Poll");
+        }
         //
         if (!"DRAFT".equals(poll.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Update only for drafts");
@@ -189,9 +194,14 @@ public class PollServiceImpl implements PollService {
         );
     }
     //
-    public void delete(String id) {
+    public void delete(String id, String authorId) {
         Poll poll = repo.findById(id).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Poll not found"));
+        //
+        if (!poll.getAuthorId().equals(authorId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You are not authorized to delete this Poll");
+        }
         //
         if (!"DRAFT".equals(poll.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Delete only for drafts");
