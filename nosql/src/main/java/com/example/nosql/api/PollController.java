@@ -137,4 +137,10 @@ public class PollController {
         //
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<PollResponse> getById(@PathVariable String id) {
+        Poll poll = service.getById(id);
+        PollResponse response = mapper.toResponse(poll);
+        return ResponseEntity.ok(response);
+    }
 }
