@@ -210,4 +210,10 @@ public class PollServiceImpl implements PollService {
         //
         repo.delete(poll);
     }
+    //
+    @Override
+    public Poll getById(String id) {
+        return repo.findById(id).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Poll not found"));
+    }
 }
