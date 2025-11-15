@@ -160,8 +160,12 @@ public class PollController {
         return ResponseEntity.ok(stats);
     }
     @GetMapping("/{id}/progress")
-    public ResponseEntity<PollStatsResponse> getProgress(@PathVariable String pollId) {
-        PollStatsResponse stats = voteService.getProgress(pollId);
+    public ResponseEntity<PollStatsResponse> getProgress(
+            @PathVariable String pollId,
+            Authentication auth
+    ) {
+        String currentUserId = (String) auth.getDetails();
+        PollStatsResponse stats = voteService.getProgress(pollId, currentUserId);
         return ResponseEntity.ok(stats);
     }
 }
