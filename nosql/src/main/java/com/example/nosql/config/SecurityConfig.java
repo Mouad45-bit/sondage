@@ -49,8 +49,19 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        //
                         .requestMatchers("/auth/register", "/auth/login").permitAll()
+                        //
+                        .requestMatchers("/api/polls", "/api/polls/**").permitAll()
+                        //
                         .requestMatchers(HttpMethod.POST, "/auth/logout").authenticated()
+                        //
+                        .requestMatchers(HttpMethod.POST, "/api/polls").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/polls/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/polls/**").authenticated()
+                        //
+                        .requestMatchers(HttpMethod.POST, "/api/polls/**/votes").authenticated()
+                        //
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authProvider)
