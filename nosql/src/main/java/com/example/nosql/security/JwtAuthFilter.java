@@ -37,11 +37,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     return;
                 }
                 //
+                String uid = jwtService.extractUid(token);
                 String username = jwtService.extractUsername(token);
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                     var authToken = new UsernamePasswordAuthenticationToken(userDetails, null,
                             userDetails.getAuthorities());
+                    //
+                    if (uid != null && !uid.isBlank()) {
+                        authToken.setDetails(uid);
+                    }
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             } catch (Exception ignored) {}
