@@ -30,4 +30,6 @@ public interface PollService {
     PollResponse update(String id, @NotNull UpdatePollRequest newPoll, String authorId);
     //
     void delete(String id, String authorId);
+    //
+    Poll getById(String id);
 }
