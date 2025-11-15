@@ -22,7 +22,7 @@ public interface VoteRepository extends Repository<Vote, String> {
             value = "{ 'pollId': ?0, 'optionIndex': ?1 }",
             count = true
     )
-    long countByPollIdAndOptionIndex(String pollId, String optionIndex);
+    long countByPollIdAndOptionIndex(String pollId, int optionIndex);
     //
     <S extends Vote> S save(S entity);
 }
