@@ -52,7 +52,7 @@ public class SecurityConfig {
                         //
                         .requestMatchers("/auth/register", "/auth/login").permitAll()
                         //
-                        .requestMatchers("/api/polls", "/api/polls/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/polls", "/api/polls/**").permitAll()
                         //
                         .requestMatchers(HttpMethod.POST, "/auth/logout").authenticated()
                         //
