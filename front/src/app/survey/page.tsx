@@ -3,30 +3,37 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import QuestionCard from '@/components/QuestionCard'; 
-import { ArrowLeft, Send } from 'lucide-react'; // Icônes pour navigation/soumission
+import { ArrowLeft, Send } from 'lucide-react'; 
+import { Question, UserAnswer } from '@/types/survey'; // <-- Utilisation des types
 
-
-const questionsData = [
+// SIMULATION DES DONNÉES (À remplacer par l'appel API)
+const questionsData: Question[] = [
   { 
     id: 'q1', 
+    questionNumber: 1,
     text: "Quel est le facteur le plus important pour la performance d'une équipe de football ?", 
-    options: ["Entraîneur", "Budget annuel", "Cohésion d'équipe", "Statistiques de possession"] 
+    options: ["Entraîneur", "Budget annuel", "Cohésion d'équipe", "Statistiques de possession"],
+    type: 'single-choice'
   },
   { 
     id: 'q2', 
+    questionNumber: 2,
     text: "La technologie VAR (assistance vidéo) améliore-t-elle l'équité du jeu ?", 
-    options: ["Oui, elle est indispensable", "Oui, mais elle ralentit le jeu", "Non, elle crée plus de confusion", "Neutre"] 
+    options: ["Oui, elle est indispensable", "Oui, mais elle ralentit le jeu", "Non, elle crée plus de confusion", "Neutre"],
+    type: 'single-choice'
   },
   { 
     id: 'q3', 
+    questionNumber: 3,
     text: "Quelle est l'infrastructure qui influence le plus la fidélité des fans (Stade, Site Web, Réseaux Sociaux) ?", 
-    options: ["Stade / Installations", "Site Web et Applications mobiles", "Réseaux Sociaux et Contenu Vidéo"] 
+    options: ["Stade / Installations", "Site Web et Applications mobiles", "Réseaux Sociaux et Contenu Vidéo"],
+    type: 'single-choice'
   },
 ];
 
 export default function SurveyPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<{ [key: string]: string }>({}); 
+  const [answers, setAnswers] = useState<{ [key: string]: string | string[] }>({}); 
 
   const currentQuestion = questionsData[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === questionsData.length - 1;
@@ -41,8 +48,15 @@ export default function SurveyPage() {
     if (isCurrentQuestionAnswered && !isLastQuestion) {
       setCurrentQuestionIndex(prev => prev + 1);
     } else if (isLastQuestion && isCurrentQuestionAnswered) {
-      alert("Sondage terminé ! Les réponses seront envoyées au serveur.");
-      console.log("Réponses finales:", answers);
+      // Préparation du "Payload" final pour l'envoi au Back-end
+      const finalPayload: UserAnswer[] = Object.keys(answers).map(id => ({
+          questionId: id,
+          answer: answers[id],
+      }));
+      
+      console.log("Payload final à envoyer au back-end:", finalPayload);
+      alert("Sondage terminé ! Prêt à envoyer les données au serveur.");
+      // NOTE: L'appel API sera implémenté ici après la validation de la structure
     }
   };
 
@@ -57,7 +71,7 @@ export default function SurveyPage() {
     <div className="flex justify-center min-h-[80vh] bg-gray-100 p-8">
       <div className="w-full max-w-3xl space-y-6">
         
-        {/* Barre de Progression */}
+        {}
         <div className="bg-white p-4 rounded-lg shadow-md">
             <h3 className="text-gray-600 mb-2 font-semibold">
                 Question {currentQuestionIndex + 1} de {questionsData.length}
@@ -77,7 +91,7 @@ export default function SurveyPage() {
           questionText={currentQuestion.text}
           options={currentQuestion.options}
           onAnswer={handleAnswer}
-          initialAnswer={answers[currentQuestion.id]}
+          initialAnswer={answers[currentQuestion.id] as string}
         />
         
         {}
