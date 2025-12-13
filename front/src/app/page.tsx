@@ -12,6 +12,7 @@ import { usePolls } from '@/context/PollContext'; // <-- NOUVEL IMPORT
 
 // ❌ NOTE : La variable 'mockPolls' statique DOIT ÊTRE SUPPRIMÉE de ce fichier.
 
+//
 // Composant pour dessiner une seule carte de sondage dans la liste
 const PollCard = ({ poll }: { poll: Poll }) => {
   
