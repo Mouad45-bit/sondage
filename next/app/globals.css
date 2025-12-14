@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
+/* --- Design tokens (minimal / pro) --- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafafa;   /* zinc-50 */
+  --foreground: #0a0a0a;   /* near black */
+  --card: #ffffff;
+  --border: #e4e4e7;       /* zinc-200 */
+  --muted: #71717a;        /* zinc-500 */
+  --ring: rgba(24, 24, 27, 0.18); /* soft zinc ring */
 }
 
 @theme inline {
@@ -14,13 +19,74 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #09090b; /* zinc-950 */
+    --foreground: #fafafa; /* zinc-50 */
+    --card: #0b0b0f;
+    --border: #27272a;     /* zinc-800 */
+    --muted: #a1a1aa;      /* zinc-400 */
+    --ring: rgba(250, 250, 250, 0.18);
   }
+}
+
+/* --- Base --- */
+html,
+body {
+  height: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Sélection texte */
+::selection {
+  background: rgba(24, 24, 27, 0.12);
+}
+
+/* Liens sobres */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Focus ring cohérent */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+  border-radius: 10px;
+}
+
+/* Scrollbar légère (Chrome/Edge) */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(113, 113, 122, 0.35);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(113, 113, 122, 0.55);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+/* (Optionnel) Bordures / cards uniformes si tu veux */
+.pro-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.pro-muted {
+  color: var(--muted);
 }
