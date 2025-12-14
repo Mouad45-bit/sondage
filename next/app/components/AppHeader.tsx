@@ -7,71 +7,91 @@ import { usePathname } from "next/navigation";
 import { Bell, UserCircle2 } from "lucide-react";
 
 function isActive(pathname: string, href: string) {
-  // "/" doit matcher uniquement "/"
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
+}
+
+function NavLink({
+  href,
+  label,
+}: {
+  href: string;
+  label: string;
+}) {
+  const pathname = usePathname();
+  const active = isActive(pathname, href);
+
+  return (
+    <Link
+      href={href}
+      className={[
+        "relative -mx-2 rounded-md px-2 py-1 text-sm transition-colors",
+        active ? "text-zinc-900" : "text-zinc-600 hover:text-zinc-900",
+      ].join(" ")}
+    >
+      {label}
+      <span
+        className={[
+          "pointer-events-none absolute left-2 right-2 -bottom-2 h-[2px] rounded-full transition-opacity",
+          active ? "bg-zinc-900 opacity-100" : "bg-zinc-200 opacity-0",
+        ].join(" ")}
+      />
+    </Link>
+  );
 }
 
 export function AppHeader() {
   const pathname = usePathname();
 
-  const linkBase =
-    "text-sm font-medium transition-colors hover:text-zinc-900";
-  const linkActive = "text-zinc-900";
-  const linkInactive = "text-zinc-600";
-
   const iconBtn =
-    "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-300";
+    "inline-flex h-9 w-9 items-center justify-center rounded-lg text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-300";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/70 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:py-4">
-        {/* Brand / Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <span className="text-sm font-semibold text-zinc-900">NS</span>
+    <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/80 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+        {/* Brand */}
+        <Link href="/" className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900">
+            <span className="text-xs font-semibold tracking-wide text-white">NS</span>
           </div>
-          <div className="leading-tight">
-            <div className="text-sm font-semibold text-zinc-900">NoSQL Polls</div>
-            <div className="text-xs text-zinc-500">Sondages & votes</div>
-          </div>
+          <div className="text-sm font-semibold text-zinc-900">NoSQL Polls</div>
         </Link>
 
-        {/* Nav */}
+        {/* Nav (desktop) */}
         <nav className="hidden items-center gap-6 md:flex">
-          <Link
-            href="/"
-            className={[
-              linkBase,
-              isActive(pathname, "/") ? linkActive : linkInactive,
-            ].join(" ")}
-          >
-            Dashboard
-          </Link>
-
-          <Link
-            href="/polls"
-            className={[
-              linkBase,
-              isActive(pathname, "/polls") ? linkActive : linkInactive,
-            ].join(" ")}
-          >
-            Sondages
-            <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-600">
-              mes sondages
-            </span>
-          </Link>
+          <NavLink href="/" label="Dashboard" />
+          <NavLink href="/polls" label="Mes sondages" />
         </nav>
 
-        {/* Right actions */}
-        <div className="flex items-center gap-2">
-          {/* Mobile quick links (optionnel) */}
-          <div className="flex items-center gap-2 md:hidden">
+        {/* Actions */}
+        <div className="flex items-center gap-1">
+          <Link
+            href="/notifications"
+            className={iconBtn}
+            aria-label="Notifications"
+            title="Notifications"
+          >
+            <Bell className="h-5 w-5" />
+          </Link>
+
+          <Link
+            href="/profile"
+            className={iconBtn}
+            aria-label="Profil"
+            title="Profil"
+          >
+            <UserCircle2 className="h-5 w-5" />
+          </Link>
+
+          {/* Mobile: mini switch (ultra simple) */}
+          <div className="ml-2 flex items-center rounded-lg bg-zinc-100 p-1 md:hidden">
             <Link
               href="/"
               className={[
-                "rounded-xl px-3 py-2 text-sm",
-                isActive(pathname, "/") ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-700",
+                "rounded-md px-2 py-1 text-xs transition-colors",
+                isActive(pathname, "/")
+                  ? "bg-white text-zinc-900 shadow-sm"
+                  : "text-zinc-600",
               ].join(" ")}
             >
               Home
@@ -79,23 +99,15 @@ export function AppHeader() {
             <Link
               href="/polls"
               className={[
-                "rounded-xl px-3 py-2 text-sm",
+                "rounded-md px-2 py-1 text-xs transition-colors",
                 isActive(pathname, "/polls")
-                  ? "bg-zinc-900 text-white"
-                  : "bg-zinc-100 text-zinc-700",
+                  ? "bg-white text-zinc-900 shadow-sm"
+                  : "text-zinc-600",
               ].join(" ")}
             >
               Polls
             </Link>
           </div>
-
-          <Link href="/notifications" className={iconBtn} aria-label="Notifications">
-            <Bell className="h-5 w-5 text-zinc-700" />
-          </Link>
-
-          <Link href="/profile" className={iconBtn} aria-label="Profil">
-            <UserCircle2 className="h-5 w-5 text-zinc-700" />
-          </Link>
         </div>
       </div>
     </header>
