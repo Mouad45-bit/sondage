@@ -9,6 +9,7 @@ import { ProCard } from "../components/ProCard";
 import { api } from "../lib/api";
 import { getUidFromToken } from "../lib/jwt";
 import { logout } from "../lib/logout";
+import { UserCircle2, LogOut, AlertTriangle } from "lucide-react";
 
 type UserResponse = {
   id: string;
@@ -63,44 +64,97 @@ export default function ProfilePage() {
 
   return (
     <AuthGuard>
-      <div className="mx-auto max-w-6xl px-4 py-6 space-y-5">
-        <ProCard
-          title="Profil"
-          subtitle="Informations utilisateur."
-          right={
-            <button
-              onClick={onLogout}
-              disabled={loggingOut}
-              className="rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
-            >
-              {loggingOut ? "Déconnexion…" : "Déconnexion"}
-            </button>
-          }
-        >
-          {loading && (
-            <div className="text-sm text-zinc-600 dark:text-zinc-400">Chargement…</div>
-          )}
+      <div className="min-h-screen bg-zinc-50">
+        <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 space-y-5">
+          <ProCard
+            title="Profil"
+            subtitle="Informations utilisateur."
+            right={
+              <button
+                onClick={onLogout}
+                disabled={loggingOut}
+                className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 disabled:opacity-60"
+              >
+                <LogOut className="h-4 w-4" />
+                {loggingOut ? "Déconnexion…" : "Déconnexion"}
+              </button>
+            }
+          >
+            {/* Header mini */}
+            <div className="mb-4 rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm border border-zinc-100">
+                    <UserCircle2 className="h-5 w-5 text-zinc-700" />
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                      Compte
+                    </div>
+                    <div className="mt-0.5 text-sm text-zinc-700">
+                      Détails du profil et identifiants.
+                    </div>
+                  </div>
+                </div>
 
-          {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          {!loading && !error && user && (
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-950">
-                <div className="text-xs text-zinc-500">Username</div>
-                <div className="mt-1 font-medium text-zinc-900 dark:text-zinc-50">{user.username}</div>
+                <span className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1 text-[10px] font-medium text-zinc-700">
+                  {loading ? "Chargement" : error ? "Erreur" : "Actif"}
+                </span>
               </div>
-
-              <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-950">
-                <div className="text-xs text-zinc-500">User ID</div>
-                <div className="mt-1 font-mono text-xs text-zinc-700 dark:text-zinc-200">{user.id}</div>
-              </div>
             </div>
-          )}
-        </ProCard>
+
+            {/* Loading */}
+            {loading && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+                Chargement…
+              </div>
+            )}
+
+            {/* Error */}
+            {error && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-4 w-4" />
+                  <div>
+                    <div className="font-semibold">Impossible de charger le profil</div>
+                    <div className="mt-1 text-sm">{error}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Content */}
+            {!loading && !error && user && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                    Username
+                  </div>
+                  <div className="mt-2 text-lg font-semibold text-zinc-900">
+                    {user.username}
+                  </div>
+                  <div className="mt-1 text-xs text-zinc-500">
+                    Identifiant affiché dans l’application.
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                    User ID
+                  </div>
+                  <div className="mt-2 rounded-xl border border-zinc-100 bg-zinc-50/70 px-3 py-2">
+                    <div className="font-mono text-xs text-zinc-700 break-all">
+                      {user.id}
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-zinc-500">
+                    UUID utilisé par l’API backend.
+                  </div>
+                </div>
+              </div>
+            )}
+          </ProCard>
+        </main>
       </div>
     </AuthGuard>
   );

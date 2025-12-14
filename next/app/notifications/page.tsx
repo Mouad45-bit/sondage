@@ -54,91 +54,107 @@ export default function NotificationsPage() {
 
   return (
     <AuthGuard>
-      <div className="mx-auto max-w-6xl px-4 py-6 space-y-5">
-        <ProCard
-          title="Notifications"
-          subtitle={`${items.length} notification(s) • ${unreadCount} non lue(s)`}
-          right={
-            <button
-              onClick={onMarkAll}
-              disabled={items.length === 0 || unreadCount === 0}
-              className="rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
-            >
-              Tout marquer comme lu
-            </button>
-          }
-        >
-          {toast && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-              {toast}
-            </div>
-          )}
+      <div className="min-h-screen bg-zinc-50">
+        <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 space-y-5">
+          <ProCard
+            title="Notifications"
+            subtitle={`${items.length} notification(s) • ${unreadCount} non lue(s)`}
+            right={
+              <button
+                onClick={onMarkAll}
+                disabled={items.length === 0 || unreadCount === 0}
+                className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Tout marquer comme lu
+              </button>
+            }
+          >
+            {toast && (
+              <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                {toast}
+              </div>
+            )}
 
-          {items.length === 0 ? (
-            <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
-              Aucune notification.
-            </div>
-          ) : (
-            <div className="mt-3 space-y-3">
-              {items.map((n) => (
-                <div
-                  key={n.id}
-                  className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/40"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <Bell className="h-4 w-4 text-zinc-500" />
-                        <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                          {kindLabel(n.kind)}
+            {items.length === 0 ? (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">
+                Aucune notification.
+              </div>
+            ) : (
+              <section className="space-y-3">
+                {items.map((n) => (
+                  <article
+                    key={n.id}
+                    className={[
+                      "rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm",
+                      !n.read ? "ring-1 ring-zinc-100" : "",
+                    ].join(" ")}
+                  >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      {/* Left */}
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50">
+                            <Bell className="h-4 w-4 text-zinc-700" />
+                          </span>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <div className="truncate text-sm font-semibold text-zinc-900">
+                                {kindLabel(n.kind)}
+                              </div>
+
+                              {!n.read ? (
+                                <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-700">
+                                  Non lue
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700">
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  Lue
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="mt-1 text-xs text-zinc-500">
+                              Créée le {formatDate(n.createdAtIso)}
+                            </div>
+                          </div>
                         </div>
 
-                        {!n.read ? (
-                          <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
-                            Non lue
+                        <div className="mt-4 rounded-xl border border-zinc-100 bg-zinc-50/70 px-3 py-3 text-sm text-zinc-700">
+                          {n.kind === "OPENING"
+                            ? "Ouverture prévue :"
+                            : "Résultats disponibles après :"}{" "}
+                          <span className="font-semibold text-zinc-900">
+                            {formatDate(n.atIso)}
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700">
-                            <CheckCircle2 className="h-4 w-4" />
-                            Lue
-                          </span>
-                        )}
+                        </div>
                       </div>
 
-                      <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                        {n.kind === "OPENING" ? "Ouverture prévue :" : "Résultats disponibles après :"}{" "}
-                        <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                          {formatDate(n.atIso)}
-                        </span>
-                      </div>
+                      {/* Right actions */}
+                      <div className="flex flex-col gap-2 sm:flex-row md:flex-col md:items-end">
+                        <Link
+                          href={`/poll/${n.pollId}`}
+                          className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50"
+                        >
+                          Ouvrir
+                        </Link>
 
-                      <div className="mt-2 text-xs text-zinc-500">
-                        Créée le {formatDate(n.createdAtIso)}
+                        <button
+                          onClick={() => onMarkRead(n.id)}
+                          disabled={n.read}
+                          className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Marquer comme lue
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex flex-col gap-2">
-                      <Link
-                        href={`/poll/${n.pollId}`}
-                        className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
-                      >
-                        Ouvrir
-                      </Link>
-
-                      <button
-                        onClick={() => onMarkRead(n.id)}
-                        disabled={n.read}
-                        className="rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
-                      >
-                        Marquer comme lue
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </ProCard>
+                  </article>
+                ))}
+              </section>
+            )}
+          </ProCard>
+        </main>
       </div>
     </AuthGuard>
   );

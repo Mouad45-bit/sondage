@@ -45,69 +45,107 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md items-center px-4">
-      <div className="w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/40">
-        <h1 className="text-lg font-semibold">Créer un compte</h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Username + mot de passe.
-        </p>
+    <div className="min-h-screen bg-zinc-50">
+      <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md">
+          {/* Card */}
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm md:p-7">
+            {/* Header */}
+            <div className="text-center">
+              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                <span className="text-sm font-semibold text-zinc-900">NS</span>
+              </div>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-3">
-          <div>
-            <label className="text-xs text-zinc-600 dark:text-zinc-400">Username</label>
-            <input
-              className="mt-1 h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-zinc-300 dark:border-zinc-800 dark:bg-zinc-950"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-xs text-zinc-600 dark:text-zinc-400">Mot de passe</label>
-            <input
-              type="password"
-              className="mt-1 h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-zinc-300 dark:border-zinc-800 dark:bg-zinc-950"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-xs text-zinc-600 dark:text-zinc-400">Confirmer</label>
-            <input
-              type="password"
-              className="mt-1 h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-zinc-300 dark:border-zinc-800 dark:bg-zinc-950"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              autoComplete="new-password"
-              required
-            />
-          </div>
-
-          {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
+              <h1 className="mt-4 text-lg font-semibold text-zinc-900">
+                Créer un compte
+              </h1>
+              <p className="mt-1 text-sm text-zinc-600">
+                Username + mot de passe.
+              </p>
             </div>
-          )}
 
-          <button
-            disabled={loading}
-            className="h-10 w-full rounded-xl bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
-          >
-            {loading ? "Création..." : "Créer le compte"}
-          </button>
-        </form>
+            {/* Form */}
+            <form onSubmit={onSubmit} className="mt-6 space-y-4">
+              <div>
+                <label className="text-xs font-medium text-zinc-700">
+                  Username
+                </label>
+                <input
+                  className="mt-1 h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-300 focus:ring-2 focus:ring-zinc-200"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoComplete="username"
+                  required
+                />
+              </div>
 
-        <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">
-          Déjà un compte ?{" "}
-          <Link href="/auth/login" className="font-medium text-zinc-900 hover:underline dark:text-zinc-50">
-            Se connecter
-          </Link>
-        </p>
+              <div>
+                <label className="text-xs font-medium text-zinc-700">
+                  Mot de passe
+                </label>
+                <input
+                  type="password"
+                  className="mt-1 h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-300 focus:ring-2 focus:ring-zinc-200"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-zinc-700">
+                  Confirmer
+                </label>
+                <input
+                  type="password"
+                  className="mt-1 h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-300 focus:ring-2 focus:ring-zinc-200"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
+              <button
+                disabled={loading}
+                className="h-11 w-full rounded-xl bg-zinc-950 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "Création..." : "Créer le compte"}
+              </button>
+
+              <div className="text-center text-xs text-zinc-500">
+                Ton compte sert à créer des sondages, voter et consulter l’avancement.
+              </div>
+            </form>
+
+            {/* Footer */}
+            <div className="mt-6 border-t border-zinc-100 pt-5 text-center">
+              <p className="text-sm text-zinc-600">
+                Déjà un compte ?{" "}
+                <Link
+                  href="/auth/login"
+                  className="font-medium text-zinc-900 hover:underline"
+                >
+                  Se connecter
+                </Link>
+              </p>
+            </div>
+          </div>
+
+          {/* Bottom small link */}
+          <div className="mt-4 text-center text-xs text-zinc-500">
+            <Link href="/" className="hover:underline">
+              ← Retour au dashboard
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -11,13 +11,7 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-function NavLink({
-  href,
-  label,
-}: {
-  href: string;
-  label: string;
-}) {
+function NavLink({ href, label }: { href: string; label: string }) {
   const pathname = usePathname();
   const active = isActive(pathname, href);
 
@@ -25,7 +19,7 @@ function NavLink({
     <Link
       href={href}
       className={[
-        "relative -mx-2 rounded-md px-2 py-1 text-sm transition-colors",
+        "relative -mx-2 rounded-lg px-2 py-1 text-sm font-medium transition-colors",
         active ? "text-zinc-900" : "text-zinc-600 hover:text-zinc-900",
       ].join(" ")}
     >
@@ -44,17 +38,20 @@ export function AppHeader() {
   const pathname = usePathname();
 
   const iconBtn =
-    "inline-flex h-9 w-9 items-center justify-center rounded-lg text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-300";
+    "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-200";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/80 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-zinc-200 bg-zinc-50/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         {/* Brand */}
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900">
-            <span className="text-xs font-semibold tracking-wide text-white">NS</span>
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-sm">
+            <span className="text-xs font-semibold text-zinc-900">NS</span>
           </div>
-          <div className="text-sm font-semibold text-zinc-900">NoSQL Polls</div>
+          <div className="leading-tight">
+            <div className="text-sm font-semibold text-zinc-900">NoSQL Polls</div>
+            <div className="text-[11px] text-zinc-500">Sondages & votes</div>
+          </div>
         </Link>
 
         {/* Nav (desktop) */}
@@ -64,7 +61,7 @@ export function AppHeader() {
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <Link
             href="/notifications"
             className={iconBtn}
@@ -83,15 +80,15 @@ export function AppHeader() {
             <UserCircle2 className="h-5 w-5" />
           </Link>
 
-          {/* Mobile: mini switch (ultra simple) */}
-          <div className="ml-2 flex items-center rounded-lg bg-zinc-100 p-1 md:hidden">
+          {/* Mobile: mini switch */}
+          <div className="ml-1 flex items-center rounded-xl border border-zinc-200 bg-white p-1 shadow-sm md:hidden">
             <Link
               href="/"
               className={[
-                "rounded-md px-2 py-1 text-xs transition-colors",
+                "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
                 isActive(pathname, "/")
-                  ? "bg-white text-zinc-900 shadow-sm"
-                  : "text-zinc-600",
+                  ? "bg-zinc-900 text-white"
+                  : "text-zinc-600 hover:text-zinc-900",
               ].join(" ")}
             >
               Home
@@ -99,10 +96,10 @@ export function AppHeader() {
             <Link
               href="/polls"
               className={[
-                "rounded-md px-2 py-1 text-xs transition-colors",
+                "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
                 isActive(pathname, "/polls")
-                  ? "bg-white text-zinc-900 shadow-sm"
-                  : "text-zinc-600",
+                  ? "bg-zinc-900 text-white"
+                  : "text-zinc-600 hover:text-zinc-900",
               ].join(" ")}
             >
               Polls

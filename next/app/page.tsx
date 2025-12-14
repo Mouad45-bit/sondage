@@ -1,11 +1,9 @@
 // app/page.tsx
-
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AuthGuard } from "./components/AuthGuard";
-import { ProCard } from "./components/ProCard";
 import { api } from "./lib/api";
 import { getFavorites, toggleFavorite } from "./lib/favorites";
 import { addReminder } from "./lib/reminders";
@@ -19,7 +17,7 @@ type PollResponse = {
   description?: string | null;
   status: PollStatus | string;
   dateStart: string; // ISO
-  dateEnd: string;   // ISO
+  dateEnd: string; // ISO
   options: string[];
   authorId: string;
 };
@@ -39,7 +37,6 @@ type StatusFilter = "open" | "closed" | "draft" | "favorites" | "all";
 type SearchMode = "title" | "author";
 
 function toIsoSeconds(datetimeLocal: string) {
-  // input type="datetime-local" => "YYYY-MM-DDTHH:mm"
   if (!datetimeLocal) return "";
   return datetimeLocal.length === 16 ? `${datetimeLocal}:00` : datetimeLocal;
 }
@@ -52,10 +49,25 @@ function formatDate(iso: string) {
 
 function StatusBadge({ status }: { status: string }) {
   const s = status.toUpperCase();
-  const base = "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border";
-  if (s === "OPEN") return <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>OPEN</span>;
-  if (s === "CLOSED") return <span className={`${base} border-zinc-200 bg-zinc-100 text-zinc-700`}>CLOSED</span>;
-  return <span className={`${base} border-amber-200 bg-amber-50 text-amber-700`}>DRAFT</span>;
+  const base =
+    "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border";
+  if (s === "OPEN")
+    return (
+      <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>
+        OPEN
+      </span>
+    );
+  if (s === "CLOSED")
+    return (
+      <span className={`${base} border-zinc-200 bg-zinc-100 text-zinc-700`}>
+        CLOSED
+      </span>
+    );
+  return (
+    <span className={`${base} border-amber-200 bg-amber-50 text-amber-700`}>
+      DRAFT
+    </span>
+  );
 }
 
 export default function DashboardPage() {
@@ -64,7 +76,7 @@ export default function DashboardPage() {
   const [searchMode, setSearchMode] = useState<SearchMode>("title");
   const [query, setQuery] = useState("");
   const [from, setFrom] = useState(""); // datetime-local
-  const [to, setTo] = useState("");   // datetime-local
+  const [to, setTo] = useState(""); // datetime-local
 
   // Applied state (déclenche fetch)
   const [applied, setApplied] = useState({
@@ -77,7 +89,9 @@ export default function DashboardPage() {
 
   const [favorites, setFavorites] = useState<string[]>([]);
   const [data, setData] = useState<PollResponse[]>([]);
-  const [meta, setMeta] = useState<{ page: number; totalPages?: number; hasNext?: boolean }>({ page: 0 });
+  const [meta, setMeta] = useState<{ page: number; totalPages?: number; hasNext?: boolean }>({
+    page: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -120,7 +134,6 @@ export default function DashboardPage() {
       else if (hasQuery && applied.searchMode === "title") {
         path = `/api/polls/search?title=${encodeURIComponent(applied.query.trim())}&page=${page}&size=${size}`;
       } else if (hasQuery && applied.searchMode === "author") {
-        // Slice côté backend, mais on récupère "content" pareil
         path = `/api/polls/search?author=${encodeURIComponent(applied.query.trim())}&page=${page}&size=${size}`;
       }
       // 3) Status filter
@@ -167,248 +180,278 @@ export default function DashboardPage() {
     setApplied({ status: "all", searchMode: "title", query: "", from: "", to: "" });
   }
 
+  const pillBase =
+    "rounded-full px-3 py-1 text-xs font-medium transition-colors";
+  const pillActive = "bg-zinc-950 text-white shadow-sm";
+  const pillIdle = "bg-transparent text-zinc-800 hover:bg-zinc-200";
+
   return (
     <AuthGuard>
-      <div className="space-y-5">
-        <ProCard
-          title="Dashboard"
-          subtitle="Liste des sondages, filtres, recherche et actions rapides."
-          right={
-            <Link
-              href="/create"
-              className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-            >
-              <Plus className="h-4 w-4" />
-              Create poll
-            </Link>
-          }
-        >
+      <div className="min-h-screen bg-zinc-50">
+        <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 space-y-5">
+          {/* Header */}
+          <section className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 md:px-5 md:py-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="text-center md:text-left">
+                <h1 className="text-xs font-semibold tracking-[0.18em] text-zinc-700 uppercase md:text-sm">
+                  dashboard
+                </h1>
+                <p className="mt-1 text-xs text-zinc-600 md:text-sm">
+                  Liste des sondages, filtres, recherche et actions rapides.
+                </p>
+              </div>
+
+              <Link
+                href="/create"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900"
+              >
+                <Plus className="h-4 w-4" />
+                Create poll
+              </Link>
+            </div>
+          </section>
+
           {/* Filters */}
-          <div className="grid gap-3 md:grid-cols-12">
-            {/* status */}
-            <div className="md:col-span-6">
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    ["all", "Tous"],
-                    ["open", "Open"],
-                    ["closed", "Closed"],
-                    ["draft", "Draft"],
-                    ["favorites", "Favorites"],
-                  ] as const
-                ).map(([key, label]) => (
-                  <button
-                    key={key}
-                    onClick={() => setStatus(key)}
-                    className={[
-                      "rounded-xl border px-3 py-2 text-sm transition-colors",
-                      status === key
-                        ? "border-zinc-900 bg-zinc-900 text-white"
-                        : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950",
-                    ].join(" ")}
-                  >
-                    {label}
-                  </button>
-                ))}
+          <section className="rounded-2xl border border-zinc-200 bg-white p-4 md:p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-zinc-900">Filtres</h2>
+                <p className="mt-0.5 text-[11px] text-zinc-500">
+                  Statut, recherche et intervalle de dates.
+                </p>
               </div>
+
+              <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[10px] font-medium text-zinc-700">
+                {loading ? "Chargement…" : `${filtered.length} affiché(s)`}
+                {meta.totalPages !== undefined ? ` · pages ${meta.totalPages}` : ""}
+              </span>
             </div>
 
-            {/* search */}
-            <div className="md:col-span-6">
-              <div className="flex gap-2">
-                <div className="flex w-full items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-950">
-                  <Search className="h-4 w-4 text-zinc-500" />
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={searchMode === "title" ? "Rechercher par titre…" : "Rechercher par auteur…"}
-                    className="h-10 w-full bg-transparent text-sm outline-none"
-                  />
-                </div>
-
-                <select
-                  value={searchMode}
-                  onChange={(e) => setSearchMode(e.target.value as SearchMode)}
-                  className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-700 outline-none hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
-                >
-                  <option value="title">Titre</option>
-                  <option value="author">Auteur</option>
-                </select>
-              </div>
-            </div>
-
-            {/* dates */}
-            <div className="md:col-span-12">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
-                <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  <Calendar className="h-4 w-4" />
-                  Filtrer par dates (overlap)
-                </div>
-
-                <div className="flex flex-1 flex-col gap-2 md:flex-row">
-                  <input
-                    type="datetime-local"
-                    value={from}
-                    onChange={(e) => setFrom(e.target.value)}
-                    className="h-10 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-950"
-                  />
-                  <input
-                    type="datetime-local"
-                    value={to}
-                    onChange={(e) => setTo(e.target.value)}
-                    className="h-10 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none dark:border-zinc-800 dark:bg-zinc-950"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={applyFilters}
-                    className="h-10 rounded-xl bg-zinc-900 px-4 text-sm font-medium text-white hover:bg-zinc-800"
-                  >
-                    Appliquer
-                  </button>
-                  <button
-                    onClick={resetFilters}
-                    className="h-10 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
-                  >
-                    Reset
-                  </button>
+            <div className="grid gap-4">
+              {/* Status pills */}
+              <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
+                <div className="inline-flex items-center gap-0.5 rounded-full border border-zinc-300 bg-white p-1">
+                  {(
+                    [
+                      ["all", "Tous"],
+                      ["open", "Open"],
+                      ["closed", "Closed"],
+                      ["draft", "Draft"],
+                      ["favorites", "Favorites"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <button
+                      key={key}
+                      onClick={() => setStatus(key)}
+                      className={[
+                        pillBase,
+                        status === key ? pillActive : pillIdle,
+                      ].join(" ")}
+                      type="button"
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
               </div>
+
+              {/* Search */}
+              <div className="grid gap-2 md:grid-cols-12 md:items-center">
+                <div className="md:col-span-9">
+                  <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3">
+                    <Search className="h-4 w-4 text-zinc-500" />
+                    <input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder={
+                        searchMode === "title"
+                          ? "Rechercher par titre…"
+                          : "Rechercher par auteur…"
+                      }
+                      className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-3">
+                  <select
+                    value={searchMode}
+                    onChange={(e) => setSearchMode(e.target.value as SearchMode)}
+                    className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-700 outline-none hover:bg-zinc-50"
+                  >
+                    <option value="title">Titre</option>
+                    <option value="author">Auteur</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center gap-2 text-xs text-zinc-600">
+                    <Calendar className="h-4 w-4" />
+                    Filtrer par dates (overlap)
+                  </div>
+
+                  <div className="flex flex-1 flex-col gap-2 md:flex-row">
+                    <input
+                      type="datetime-local"
+                      value={from}
+                      onChange={(e) => setFrom(e.target.value)}
+                      className="h-10 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none"
+                    />
+                    <input
+                      type="datetime-local"
+                      value={to}
+                      onChange={(e) => setTo(e.target.value)}
+                      className="h-10 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={applyFilters}
+                      className="h-10 rounded-xl bg-zinc-950 px-4 text-sm font-medium text-white hover:bg-zinc-900"
+                      type="button"
+                    >
+                      Appliquer
+                    </button>
+                    <button
+                      onClick={resetFilters}
+                      className="h-10 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50"
+                      type="button"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Toast / Error */}
+              {toast && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                  {toast}
+                </div>
+              )}
+
+              {error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
             </div>
-          </div>
+          </section>
 
-          {/* Info */}
-          <div className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">
-            {loading ? "Chargement…" : `${filtered.length} sondage(s) affiché(s).`}
-            {meta.totalPages !== undefined ? ` (pages: ${meta.totalPages})` : ""}
-          </div>
-
-          {toast && (
-            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-              {toast}
-            </div>
-          )}
-
-          {error && (
-            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-        </ProCard>
-
-        {/* List */}
-        <div className="grid gap-4">
-          {!loading && filtered.length === 0 && (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
-              Aucun sondage trouvé.
-            </div>
-          )}
-
-          {filtered.map((p) => {
-            const fav = favorites.includes(p.id);
-            const st = String(p.status).toUpperCase();
-
-            return (
-              <div
-                key={p.id}
-                className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/40"
+          {/* List */}
+          <section className="grid gap-4">
+            {!loading && filtered.length === 0 && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">
+                Aucun sondage trouvé.
+              </div>
+            )}
+            {filtered.map((p) => {
+              const fav = favorites.includes(p.id);
+              const st = String(p.status).toUpperCase();
+              return (
+              <article
+              key={p.id}
+              className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="truncate text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                      <h3 className="truncate text-base font-semibold text-zinc-900">
                         {p.title}
                       </h3>
                       <StatusBadge status={st} />
                     </div>
-
                     {p.description && (
-                      <p className="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+                      <p className="mt-1 line-clamp-2 text-sm text-zinc-600">
                         {p.description}
-                      </p>
+                        </p>
                     )}
-
                     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
                       <span>Ouverture: {formatDate(p.dateStart)}</span>
                       <span>Fermeture: {formatDate(p.dateEnd)}</span>
                     </div>
                   </div>
-
-                  {/* favorite */}
                   <button
-                    onClick={() => {
-                      const next = toggleFavorite(p.id);
-                      setFavorites(next);
-                    }}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950"
-                    aria-label="Favori"
-                    title="Favori"
+                  type="button"
+                  onClick={() => {
+                    const next = toggleFavorite(p.id);
+                    setFavorites(next);
+                  }}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50"
+                  aria-label="Favori"
+                  title="Favori"
                   >
-                    <Star className={`h-5 w-5 ${fav ? "fill-zinc-900 text-zinc-900" : "text-zinc-600"}`} />
+                    <Star
+                    className={`h-5 w-5 ${
+                      fav ? "fill-zinc-950 text-zinc-950" : "text-zinc-600"
+                    }`}
+                    />
                   </button>
                 </div>
-
-                {/* actions */}
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
-                    href={`/poll/${p.id}`}
-                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+                  href={`/poll/${p.id}`}
+                  className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
                   >
                     Voir informations
                   </Link>
-
                   {st === "OPEN" && (
                     <>
-                      <Link
-                        href={`/poll/${p.id}`}
-                        className="rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-                      >
-                        Participer
-                      </Link>
-                      <Link
-                        href={`/poll/${p.id}/progress`}
-                        className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
-                      >
-                        Voir avancement
-                      </Link>
-                      <button
-                        onClick={() => {
-                          addReminder(p.id, "RESULTS", p.dateEnd);
-                          setToast("Rappel résultats enregistré (local).");
-                        }}
-                        className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
-                      >
-                        Fixer rappel résultats
-                      </button>
+                    <Link
+                    href={`/poll/${p.id}`}
+                    className="rounded-xl bg-zinc-950 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-900"
+                    >
+                      Participer
+                    </Link>
+                    <Link
+                    href={`/poll/${p.id}/progress`}
+                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                    >
+                      Voir avancement
+                    </Link>
+                    <button
+                    type="button"
+                    onClick={() => {
+                      addReminder(p.id, "RESULTS", p.dateEnd);
+                      setToast("Rappel résultats enregistré (local).");
+                    }}
+                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                    >
+                      Fixer rappel résultats
+                    </button>
                     </>
                   )}
-
                   {st === "CLOSED" && (
                     <Link
-                      href={`/poll/${p.id}/results`}
-                      className="rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+                    href={`/poll/${p.id}/results`}
+                    className="rounded-xl bg-zinc-950 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-900"
                     >
                       Voir résultats
                     </Link>
                   )}
-
                   {st === "DRAFT" && (
                     <button
-                      onClick={() => {
-                        addReminder(p.id, "OPENING", p.dateStart);
-                        setToast("Rappel ouverture enregistré (local).");
-                      }}
-                      className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+                    type="button"
+                    onClick={() => {
+                      addReminder(p.id, "OPENING", p.dateStart);
+                      setToast("Rappel ouverture enregistré (local).");
+                    }}
+                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
                     >
                       Fixer rappel ouverture
                     </button>
                   )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+      </article>
+    );
+  })}
+</section>
+
+        </main>
       </div>
     </AuthGuard>
   );
