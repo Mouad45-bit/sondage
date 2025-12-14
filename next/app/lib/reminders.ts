@@ -43,3 +43,19 @@ export function addReminder(pollId: string, kind: ReminderKind, atIso: string) {
   localStorage.setItem(REMINDERS_KEY, JSON.stringify(next));
   return item;
 }
+
+function saveReminders(next: Reminder[]) {
+  localStorage.setItem(REMINDERS_KEY, JSON.stringify(next));
+}
+
+export function markReminderRead(id: string): Reminder[] {
+  const next = listReminders().map((r) => (r.id === id ? { ...r, read: true } : r));
+  saveReminders(next);
+  return next;
+}
+
+export function markAllRemindersRead(): Reminder[] {
+  const next = listReminders().map((r) => ({ ...r, read: true }));
+  saveReminders(next);
+  return next;
+}
