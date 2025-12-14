@@ -50,7 +50,7 @@ function formatDate(iso: string) {
 function StatusBadge({ status }: { status: string }) {
   const s = status.toUpperCase();
   const base =
-    "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border";
+    "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-wide";
   if (s === "OPEN")
     return (
       <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>
@@ -143,8 +143,6 @@ export default function DashboardPage() {
         path = `/api/polls/status/CLOSED?page=${page}&size=${size}`;
       } else if (applied.status === "draft") {
         path = `/api/polls/status/DRAFT?page=${page}&size=${size}`;
-      } else {
-        path = `/api/polls?page=${page}&size=${size}`;
       }
 
       const res = await api<PageLike<PollResponse>>(path, { method: "GET", auth: true });
@@ -181,56 +179,55 @@ export default function DashboardPage() {
   }
 
   const pillBase =
-    "rounded-full px-3 py-1 text-xs font-medium transition-colors";
+    "rounded-full px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300";
   const pillActive = "bg-zinc-950 text-white shadow-sm";
-  const pillIdle = "bg-transparent text-zinc-800 hover:bg-zinc-200";
+  const pillIdle = "bg-transparent text-zinc-700 hover:bg-zinc-100";
+
+  const inputBase =
+    "h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-zinc-300";
+
+  const btnPrimary =
+    "inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold !text-white shadow-sm hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
+  const btnGhost =
+    "inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
 
   return (
     <AuthGuard>
       <div className="min-h-screen bg-zinc-50">
-        <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 space-y-5">
+        <main className="mx-auto max-w-6xl px-4 py-2 space-y-4">
           {/* Header */}
-          <section className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 md:px-5 md:py-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="text-center md:text-left">
-                <h1 className="text-xs font-semibold tracking-[0.18em] text-zinc-700 uppercase md:text-sm">
-                  dashboard
-                </h1>
-                <p className="mt-1 text-xs text-zinc-600 md:text-sm">
-                  Liste des sondages, filtres, recherche et actions rapides.
-                </p>
-              </div>
-
-              <Link
-                href="/create"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-900"
-              >
-                <Plus className="h-4 w-4" />
-                Create poll
-              </Link>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="text-center md:text-left text-2xl font-semibold uppercase tracking-[0.16em] text-zinc-600 uppercase">
+              Tous sondages
             </div>
-          </section>
+            <Link href="/create" className={btnPrimary}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create poll
+            </Link>
+          </div>
 
           {/* Filters */}
-          <section className="rounded-2xl border border-zinc-200 bg-white p-4 md:p-5">
-            <div className="mb-4 flex items-center justify-between">
+          <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900">Filtres</h2>
-                <p className="mt-0.5 text-[11px] text-zinc-500">
+                <h2 className="text-sm font-semibold text-zinc-950">Filtres</h2>
+                <p className="mt-1 text-[12px] text-zinc-600">
                   Statut, recherche et intervalle de dates.
                 </p>
               </div>
 
-              <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[10px] font-medium text-zinc-700">
-                {loading ? "Chargement…" : `${filtered.length} affiché(s)`}
-                {meta.totalPages !== undefined ? ` · pages ${meta.totalPages}` : ""}
-              </span>
+              <div className="flex items-center justify-center md:justify-end">
+                <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-semibold text-zinc-700">
+                  {loading ? "Chargement…" : `${filtered.length} affiché(s)`}
+                  {meta.totalPages !== undefined ? ` · pages ${meta.totalPages}` : ""}
+                </span>
+              </div>
             </div>
 
             <div className="grid gap-4">
               {/* Status pills */}
               <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-                <div className="inline-flex items-center gap-0.5 rounded-full border border-zinc-300 bg-white p-1">
+                <div className="inline-flex items-center gap-0.5 rounded-full border border-zinc-200 bg-white p-1">
                   {(
                     [
                       ["all", "Tous"],
@@ -243,10 +240,7 @@ export default function DashboardPage() {
                     <button
                       key={key}
                       onClick={() => setStatus(key)}
-                      className={[
-                        pillBase,
-                        status === key ? pillActive : pillIdle,
-                      ].join(" ")}
+                      className={[pillBase, status === key ? pillActive : pillIdle].join(" ")}
                       type="button"
                     >
                       {label}
@@ -263,12 +257,8 @@ export default function DashboardPage() {
                     <input
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      placeholder={
-                        searchMode === "title"
-                          ? "Rechercher par titre…"
-                          : "Rechercher par auteur…"
-                      }
-                      className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
+                      placeholder={searchMode === "title" ? "Rechercher par titre…" : "Rechercher par auteur…"}
+                      className="h-10 w-full bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
                     />
                   </div>
                 </div>
@@ -277,7 +267,7 @@ export default function DashboardPage() {
                   <select
                     value={searchMode}
                     onChange={(e) => setSearchMode(e.target.value as SearchMode)}
-                    className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-700 outline-none hover:bg-zinc-50"
+                    className={inputBase}
                   >
                     <option value="title">Titre</option>
                     <option value="author">Auteur</option>
@@ -286,11 +276,11 @@ export default function DashboardPage() {
               </div>
 
               {/* Dates */}
-              <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3">
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-center gap-2 text-xs text-zinc-600">
-                    <Calendar className="h-4 w-4" />
-                    Filtrer par dates (overlap)
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700">
+                    <Calendar className="h-4 w-4 text-zinc-500" />
+                    Filtrer par dates
                   </div>
 
                   <div className="flex flex-1 flex-col gap-2 md:flex-row">
@@ -298,29 +288,21 @@ export default function DashboardPage() {
                       type="datetime-local"
                       value={from}
                       onChange={(e) => setFrom(e.target.value)}
-                      className="h-10 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none"
+                      className={inputBase}
                     />
                     <input
                       type="datetime-local"
                       value={to}
                       onChange={(e) => setTo(e.target.value)}
-                      className="h-10 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none"
+                      className={inputBase}
                     />
                   </div>
 
                   <div className="flex gap-2">
-                    <button
-                      onClick={applyFilters}
-                      className="h-10 rounded-xl bg-zinc-950 px-4 text-sm font-medium text-white hover:bg-zinc-900"
-                      type="button"
-                    >
+                    <button onClick={applyFilters} className={btnPrimary} type="button">
                       Appliquer
                     </button>
-                    <button
-                      onClick={resetFilters}
-                      className="h-10 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50"
-                      type="button"
-                    >
+                    <button onClick={resetFilters} className={btnGhost} type="button">
                       Reset
                     </button>
                   </div>
@@ -329,13 +311,13 @@ export default function DashboardPage() {
 
               {/* Toast / Error */}
               {toast && (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
                   {toast}
                 </div>
               )}
 
               {error && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
                   {error}
                 </div>
               )}
@@ -345,112 +327,103 @@ export default function DashboardPage() {
           {/* List */}
           <section className="grid gap-4">
             {!loading && filtered.length === 0 && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
                 Aucun sondage trouvé.
               </div>
             )}
+
             {filtered.map((p) => {
               const fav = favorites.includes(p.id);
               const st = String(p.status).toUpperCase();
-              return (
-              <article
-              key={p.id}
-              className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="truncate text-base font-semibold text-zinc-900">
-                        {p.title}
-                      </h3>
-                      <StatusBadge status={st} />
-                    </div>
-                    {p.description && (
-                      <p className="mt-1 line-clamp-2 text-sm text-zinc-600">
-                        {p.description}
-                        </p>
-                    )}
-                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
-                      <span>Ouverture: {formatDate(p.dateStart)}</span>
-                      <span>Fermeture: {formatDate(p.dateEnd)}</span>
-                    </div>
-                  </div>
-                  <button
-                  type="button"
-                  onClick={() => {
-                    const next = toggleFavorite(p.id);
-                    setFavorites(next);
-                  }}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50"
-                  aria-label="Favori"
-                  title="Favori"
-                  >
-                    <Star
-                    className={`h-5 w-5 ${
-                      fav ? "fill-zinc-950 text-zinc-950" : "text-zinc-600"
-                    }`}
-                    />
-                  </button>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Link
-                  href={`/poll/${p.id}`}
-                  className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-                  >
-                    Voir informations
-                  </Link>
-                  {st === "OPEN" && (
-                    <>
-                    <Link
-                    href={`/poll/${p.id}`}
-                    className="rounded-xl bg-zinc-950 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-900"
-                    >
-                      Participer
-                    </Link>
-                    <Link
-                    href={`/poll/${p.id}/progress`}
-                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-                    >
-                      Voir avancement
-                    </Link>
-                    <button
-                    type="button"
-                    onClick={() => {
-                      addReminder(p.id, "RESULTS", p.dateEnd);
-                      setToast("Rappel résultats enregistré (local).");
-                    }}
-                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-                    >
-                      Fixer rappel résultats
-                    </button>
-                    </>
-                  )}
-                  {st === "CLOSED" && (
-                    <Link
-                    href={`/poll/${p.id}/results`}
-                    className="rounded-xl bg-zinc-950 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-900"
-                    >
-                      Voir résultats
-                    </Link>
-                  )}
-                  {st === "DRAFT" && (
-                    <button
-                    type="button"
-                    onClick={() => {
-                      addReminder(p.id, "OPENING", p.dateStart);
-                      setToast("Rappel ouverture enregistré (local).");
-                    }}
-                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-                    >
-                      Fixer rappel ouverture
-                    </button>
-                  )}
-                </div>
-      </article>
-    );
-  })}
-</section>
 
+              return (
+                <article
+                  key={p.id}
+                  className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="truncate text-base font-semibold text-zinc-950">
+                          {p.title}
+                        </h3>
+                        <StatusBadge status={st} />
+                      </div>
+
+                      {p.description && (
+                        <p className="mt-1 line-clamp-2 text-sm text-zinc-600">
+                          {p.description}
+                        </p>
+                      )}
+
+                      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
+                        <span>Ouverture: {formatDate(p.dateStart)}</span>
+                        <span>Fermeture: {formatDate(p.dateEnd)}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setFavorites(toggleFavorite(p.id))}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                      aria-label="Favori"
+                      title="Favori"
+                    >
+                      <Star
+                        className={`h-5 w-5 ${fav ? "fill-zinc-950 text-zinc-950" : "text-zinc-500"}`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link href={`/poll/${p.id}`} className={btnGhost}>
+                      Voir informations
+                    </Link>
+
+                    {st === "OPEN" && (
+                      <>
+                        <Link href={`/poll/${p.id}`} className={btnPrimary}>
+                          Participer
+                        </Link>
+                        <Link href={`/poll/${p.id}/progress`} className={btnGhost}>
+                          Voir avancement
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            addReminder(p.id, "RESULTS", p.dateEnd);
+                            setToast("Rappel résultats enregistré (local).");
+                          }}
+                          className={btnGhost}
+                        >
+                          Fixer rappel résultats
+                        </button>
+                      </>
+                    )}
+
+                    {st === "CLOSED" && (
+                      <Link href={`/poll/${p.id}/results`} className={btnPrimary}>
+                        Voir résultats
+                      </Link>
+                    )}
+
+                    {st === "DRAFT" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          addReminder(p.id, "OPENING", p.dateStart);
+                          setToast("Rappel ouverture enregistré (local).");
+                        }}
+                        className={btnGhost}
+                      >
+                        Fixer rappel ouverture
+                      </button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </section>
         </main>
       </div>
     </AuthGuard>

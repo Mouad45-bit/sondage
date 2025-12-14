@@ -42,7 +42,7 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-zinc-50/80 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+      <div className="mx-auto flex h-18 max-w-6xl items-center justify-between px-4">
         {/* Brand */}
         <Link href="/" className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-sm">
