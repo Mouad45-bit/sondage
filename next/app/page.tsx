@@ -7,7 +7,7 @@ import { AuthGuard } from "./components/AuthGuard";
 import { api } from "./lib/api";
 import { getFavorites, toggleFavorite } from "./lib/favorites";
 import { addReminder } from "./lib/reminders";
-import { Calendar, Plus, Search, Star } from "lucide-react";
+import { Calendar, Plus, Search, Star, Eye } from "lucide-react";
 
 type PollStatus = "DRAFT" | "OPEN" | "CLOSED";
 
@@ -184,12 +184,12 @@ export default function DashboardPage() {
   const pillIdle = "bg-transparent text-zinc-700 hover:bg-zinc-100";
 
   const inputBase =
-    "h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-zinc-300";
+    "h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-500 outline-none focus:ring-2 focus:ring-zinc-300";
 
   const btnPrimary =
-    "inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 font-semibold !text-white shadow-sm hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
+    "cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 font-semibold !text-white shadow-sm hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
   const btnGhost =
-    "inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
+    "cursor-pointer inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
 
   return (
     <AuthGuard>
@@ -210,14 +210,14 @@ export default function DashboardPage() {
           <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-950">Filters</h2>
-                <p className="mt-1 text-[12px] text-zinc-600">
+                <h2 className="text-xl font-semibold text-zinc-950">Filters</h2>
+                <p className="mt-1 text-sm text-zinc-600">
                   Status, search and date range.
                 </p>
               </div>
 
               <div className="flex items-center justify-center md:justify-end">
-                <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-semibold text-zinc-700">
+                <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-700">
                   {loading ? "Loading.." : `${filtered.length} displayed`}
                   {meta.totalPages !== undefined ? ` · ${meta.totalPages} ${
                     meta.totalPages > 1 ? "pages" : "page"
@@ -253,19 +253,19 @@ export default function DashboardPage() {
 
               {/* Search */}
               <div className="grid gap-2 md:grid-cols-12 md:items-center">
-                <div className="md:col-span-9">
-                  <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3">
+                <div className="md:col-span-10">
+                  <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white pl-3">
                     <Search className="h-4 w-4 text-zinc-500" />
                     <input
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder={searchMode === "title" ? "Search by title.." : "Search by author.."}
-                      className="h-10 w-full bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+                      className="h-10 w-full bg-transparent text-sm text-zinc-900 pl-3 outline-none placeholder:text-zinc-500"
                     />
                   </div>
                 </div>
 
-                <div className="md:col-span-3">
+                <div className="md:col-span-2">
                   <select
                     value={searchMode}
                     onChange={(e) => setSearchMode(e.target.value as SearchMode)}
@@ -327,7 +327,7 @@ export default function DashboardPage() {
           </section>
 
           {/* List */}
-          <section className="grid gap-4">
+          <section className="grid gap-4 md:grid-cols-2">
             {!loading && filtered.length === 0 && (
               <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
                 No poll found.
@@ -341,47 +341,54 @@ export default function DashboardPage() {
               return (
                 <article
                   key={p.id}
-                  className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+                  className="h-full rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:shadow-md"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="truncate text-base font-semibold text-zinc-950">
+                        <h3 className="text-lg truncate font-semibold text-zinc-950 uppercase">
                           {p.title}
                         </h3>
                         <StatusBadge status={st} />
                       </div>
 
                       {p.description && (
-                        <p className="mt-1 line-clamp-2 text-sm text-zinc-600">
+                        <p className="mt-1 line-clamp-2 text-sm text-zinc-600 font-medium">
                           {p.description}
                         </p>
                       )}
 
-                      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
+                      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-500">
                         <span>Opening: {formatDate(p.dateStart)}</span>
                         <span>Closing: {formatDate(p.dateEnd)}</span>
                       </div>
                     </div>
 
-                    <button
+                    <div className="flex items-center gap-2">
+                      <Link
+                      href={`/poll/${p.id}`}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                      aria-label="See details"
+                      title="See details"
+                      >
+                        <Eye className="h-5 w-5 text-zinc-600" />
+                      </Link>
+                      
+                      <button
                       type="button"
                       onClick={() => setFavorites(toggleFavorite(p.id))}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
-                      aria-label="Favori"
-                      title="Favori"
-                    >
-                      <Star
+                      className="cursor-pointer inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                      aria-label="Favorite"
+                      title="Favorite"
+                      >
+                        <Star
                         className={`h-5 w-5 ${fav ? "fill-zinc-950 text-zinc-950" : "text-zinc-500"}`}
-                      />
-                    </button>
+                        />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <Link href={`/poll/${p.id}`} className={btnGhost}>
-                      See details
-                    </Link>
-
                     {st === "OPEN" && (
                       <>
                         <Link href={`/poll/${p.id}`} className={btnPrimary}>
