@@ -5,10 +5,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AuthGuard } from "../components/AuthGuard";
-import { ProCard } from "../components/ProCard";
 import { api } from "../lib/api";
 import { getUidFromToken } from "../lib/jwt";
-import { Plus, Search, RefreshCcw, ArrowRight } from "lucide-react";
+import { Plus, Search, RefreshCcw, ArrowRight, ChevronRight, ChevronLeft } from "lucide-react";
 
 type PollStatus = "DRAFT" | "OPEN" | "CLOSED";
 
@@ -27,7 +26,10 @@ type PageLike<T> = {
   content: T[];
   totalPages?: number;
   number?: number;
+  last?: boolean;
 };
+
+const PAGE_SIZE = 6;
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -64,11 +66,12 @@ export default function MyPollsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [meta, setMeta] = useState<{ page: number; totalPages?: number }>({ page: 0 });
+  const [page, setPage] = useState(0);
 
-  async function fetchMyPolls() {
+  async function fetchMyPolls(p = page) {
     setLoading(true);
     setError(null);
-
+    
     try {
       const uid = getUidFromToken();
       if (!uid) {
@@ -76,17 +79,16 @@ export default function MyPollsPage() {
         setError("Token invalide: uid introuvable.");
         return;
       }
-
-      const page = 0;
-      const size = 20;
-
+      
+      const size = PAGE_SIZE;
+      
       const res = await api<PageLike<PollResponse>>(
-        `/api/polls/author/${encodeURIComponent(uid)}?page=${page}&size=${size}`,
+        `/api/polls/author/${encodeURIComponent(uid)}?page=${p}&size=${size}`,
         { method: "GET", auth: true }
       );
-
+      
       setPolls(res.content || []);
-      setMeta({ page: res.number ?? 0, totalPages: res.totalPages });
+      setMeta({ page: res.number ?? p, totalPages: res.totalPages });
     } catch (e: any) {
       setError(e?.message || "Erreur lors du chargement.");
       setPolls([]);
@@ -96,9 +98,9 @@ export default function MyPollsPage() {
   }
 
   useEffect(() => {
-    fetchMyPolls();
+    fetchMyPolls(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [page]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -106,166 +108,205 @@ export default function MyPollsPage() {
     return polls.filter((p) => (p.title || "").toLowerCase().includes(q));
   }, [polls, query]);
 
+  const totalPages = meta.totalPages ?? 1;
+  const canPrev = page > 0;
+  const canNext = page < totalPages - 1;
+
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-zinc-50">
-        <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 space-y-5">
-          <ProCard
-            title="Mes sondages"
-            subtitle="Tous les sondages dont vous êtes propriétaire."
-            right={
-              <Link
-                href="/create"
-                className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800"
-              >
-                <Plus className="h-4 w-4" />
-                Create poll
-              </Link>
-            }
+  <AuthGuard>
+    <div className="min-h-screen bg-zinc-50">
+      <main className="mx-auto max-w-6xl px-4 py-2 space-y-4">
+        {/* Header */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="text-center md:text-left text-2xl font-semibold uppercase tracking-[0.14em] text-zinc-600">
+            my polls
+          </div>
+
+          <Link
+            href="/create"
+            className="cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 font-semibold !text-white text-medium uppercase shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
           >
-            {/* Search + refresh block (zinc-50 like your dashboard style) */}
-            <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                {/* Search */}
-                <div className="flex w-full items-center gap-2 rounded-xl border border-zinc-100 bg-white px-3">
-                  <Search className="h-4 w-4 text-zinc-500" />
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Rechercher par titre…"
-                    className="h-10 w-full bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
-                  />
-                </div>
+            <Plus className="mr-2 h-4 w-4" />
+            create poll
+          </Link>
+        </div>
 
-                {/* Refresh */}
-                <button
-                  onClick={fetchMyPolls}
-                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50"
-                >
-                  <RefreshCcw className="h-4 w-4" />
-                  Rafraîchir
-                </button>
-              </div>
+        {/* Filters card (même look que dashboard) */}
+        <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-zinc-950">Filters</h2>
+            <p className="mt-1 text-sm text-zinc-600">Search + refresh.</p>
+          </div>
 
-              {/* Meta */}
-              <div className="mt-3 text-sm text-zinc-600">
-                {loading ? "Chargement…" : `${filtered.length} sondage(s).`}
-                {meta.totalPages !== undefined ? ` (pages: ${meta.totalPages})` : ""}
-              </div>
-
-              {/* Error */}
-              {error && (
-                <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {error}
-                </div>
-              )}
-            </div>
-          </ProCard>
-
-          {/* list */}
           <div className="grid gap-4">
-            {!loading && filtered.length === 0 && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
-                Aucun sondage.
+            {/* Search + refresh row */}
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="flex w-full items-center gap-2 rounded-xl border border-zinc-200 bg-white pl-3">
+                <Search className="h-4 w-4 text-zinc-500" />
+                <input
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setPage(0);
+                  }}
+                  placeholder="Search by title.."
+                  className="h-10 w-full bg-transparent text-sm text-zinc-900 pl-3 outline-none placeholder:text-zinc-500"
+                />
+              </div>
+
+              <button
+                onClick={() => fetchMyPolls(page)}
+                className="cursor-pointer inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60"
+                disabled={loading}
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Refresh
+              </button>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {error}
               </div>
             )}
+          </div>
+        </section>
 
-            {filtered.map((p) => {
-              const st = String(p.status).toUpperCase();
-
-              return (
-                <div
-                  key={p.id}
-                  className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
+        {/* Pagination */}
+          {(meta.totalPages ?? 1) > 1 && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center justify-center md:justify-end">
+                <span className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-800">
+                  {loading ? "Loading.." : `${filtered.length} displayed`}
+                  {meta.totalPages !== undefined ? ` · ${meta.totalPages} ${
+                    meta.totalPages > 1 ? "pages" : "page"
+                  }` : ""}
+                </span>
+              </div>
+              
+              <div className="inline-flex items-center rounded-xl border border-zinc-200 bg-white shadow-sm">
+                <button
+                type="button"
+                onClick={() => setPage((x) => Math.max(0, x - 1))}
+                disabled={!canPrev || loading}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-l-xl hover:bg-zinc-50 disabled:opacity-40"
+                aria-label="Previous page"
+                title="Previous page"
                 >
-                  {/* Header row */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="truncate text-base font-semibold text-zinc-900">
-                          {p.title}
-                        </h3>
-                        <StatusBadge status={st} />
-                      </div>
+                  <ChevronLeft className="h-5 w-5 text-zinc-700" />
+                </button>
+                
+                <div className="px-3 text-xs font-semibold text-zinc-700">
+                  Page {page + 1} / {totalPages}
+                </div>
+                
+                <button
+                type="button"
+                onClick={() => setPage((x) => x + 1)}
+                disabled={!canNext || loading}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-r-xl hover:bg-zinc-50 disabled:opacity-40"
+                aria-label="Next page"
+                title="Next page"
+                >
+                  <ChevronRight className="h-5 w-5 text-zinc-700" />
+                  </button>
+              </div>
+            </div>
+          )}
 
-                      {p.description && (
-                        <p className="mt-1 line-clamp-2 text-sm text-zinc-600">
-                          {p.description}
-                        </p>
-                      )}
+        {/* List */}
+        <section className="grid gap-4 md:grid-cols-2">
+          {!loading && filtered.length === 0 && (
+            <div className="md:col-span-2 col-span-full rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+              No poll found.
+            </div>
+          )}
 
-                      <div className="mt-3 grid gap-2 md:grid-cols-2">
-                        <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 px-3 py-2">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                            Ouverture
-                          </div>
-                          <div className="mt-1 text-sm text-zinc-800">
-                            {formatDate(p.dateStart)}
-                          </div>
-                        </div>
+          {filtered.map((p) => {
+            const st = String(p.status).toUpperCase();
 
-                        <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 px-3 py-2">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                            Fermeture
-                          </div>
-                          <div className="mt-1 text-sm text-zinc-800">
-                            {formatDate(p.dateEnd)}
-                          </div>
-                        </div>
-                      </div>
+            return (
+              <article
+                key={p.id}
+                className="h-full rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg truncate font-semibold text-zinc-950 uppercase">
+                        {p.title}
+                      </h3>
+                      <StatusBadge status={st} />
                     </div>
 
-                    <Link
-                      href={`/poll/${p.id}`}
-                      className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50"
-                    >
-                      Détails
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
+                    {p.description && (
+                      <p className="mt-1 line-clamp-2 text-sm text-zinc-600 font-medium">
+                        {p.description}
+                      </p>
+                    )}
+
+                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-500">
+                      <span>Opening: {formatDate(p.dateStart)}</span>
+                      <span>Closing: {formatDate(p.dateEnd)}</span>
+                    </div>
                   </div>
 
-                  {/* quick actions */}
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  {/* Actions top-right */}
+                  <div className="flex items-center gap-2">
                     <Link
                       href={`/poll/${p.id}`}
-                      className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                      aria-label="See details"
+                      title="See details"
                     >
-                      Voir informations
+                      <ArrowRight className="h-5 w-5 text-zinc-600" />
                     </Link>
-
-                    {st === "OPEN" && (
-                      <Link
-                        href={`/poll/${p.id}/progress`}
-                        className="rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800"
-                      >
-                        Voir avancement
-                      </Link>
-                    )}
-
-                    {st === "CLOSED" && (
-                      <Link
-                        href={`/poll/${p.id}/results`}
-                        className="rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800"
-                      >
-                        Voir résultats
-                      </Link>
-                    )}
-
-                    {st === "DRAFT" && (
-                      <Link
-                        href={`/poll/${p.id}/update`}
-                        className="rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800"
-                      >
-                        Apporter modification
-                      </Link>
-                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </main>
-      </div>
-    </AuthGuard>
+
+                {/* Quick actions */}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link
+                    href={`/poll/${p.id}`}
+                    className="cursor-pointer inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                  >
+                    Voir informations
+                  </Link>
+
+                  {st === "OPEN" && (
+                    <Link
+                      href={`/poll/${p.id}/progress`}
+                      className="cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                    >
+                      Voir avancement
+                    </Link>
+                  )}
+
+                  {st === "CLOSED" && (
+                    <Link
+                      href={`/poll/${p.id}/results`}
+                      className="cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                    >
+                      Voir résultats
+                    </Link>
+                  )}
+
+                  {st === "DRAFT" && (
+                    <Link
+                      href={`/poll/${p.id}/update`}
+                      className="cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                    >
+                      Apporter modification
+                    </Link>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      </main>
+    </div>
+  </AuthGuard>
   );
 }
