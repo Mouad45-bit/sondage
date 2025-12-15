@@ -19,7 +19,7 @@ function NavLink({ href, label }: { href: string; label: string }) {
     <Link
       href={href}
       className={[
-        "relative -mx-2 rounded-lg px-2 py-1 text-sm font-medium transition-colors",
+        "relative mx-1 rounded-lg px-2 py-1 text-sm font-medium transition-colors",
         active ? "text-zinc-900" : "text-zinc-600 hover:text-zinc-900",
       ].join(" ")}
     >

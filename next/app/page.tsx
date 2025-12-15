@@ -7,7 +7,7 @@ import { AuthGuard } from "./components/AuthGuard";
 import { api } from "./lib/api";
 import { getFavorites, toggleFavorite } from "./lib/favorites";
 import { addReminder } from "./lib/reminders";
-import { Calendar, Plus, Search, Star, Eye } from "lucide-react";
+import { Calendar, Plus, Search, Star, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 
 type PollStatus = "DRAFT" | "OPEN" | "CLOSED";
 
@@ -35,6 +35,8 @@ type PageLike<T> = {
 
 type StatusFilter = "open" | "closed" | "draft" | "favorites" | "all";
 type SearchMode = "title" | "author";
+
+const PAGE_SIZE = 6;
 
 function toIsoSeconds(datetimeLocal: string) {
   if (!datetimeLocal) return "";
@@ -77,6 +79,7 @@ export default function DashboardPage() {
   const [query, setQuery] = useState("");
   const [from, setFrom] = useState(""); // datetime-local
   const [to, setTo] = useState(""); // datetime-local
+  const [page, setPage] = useState(0);
 
   // Applied state (déclenche fetch)
   const [applied, setApplied] = useState({
@@ -116,33 +119,33 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      const size = 20;
-      const page = 0;
+      const size = PAGE_SIZE;
+      const p = page;
 
       const hasDateRange = !!applied.from && !!applied.to;
       const hasQuery = applied.query.trim().length > 0;
 
-      let path = `/api/polls?page=${page}&size=${size}`;
+      let path = `/api/polls?page=${p}&size=${size}`;
 
       // 1) Date filter -> overlapped
       if (hasDateRange) {
         const fromIso = encodeURIComponent(toIsoSeconds(applied.from));
         const toIso = encodeURIComponent(toIsoSeconds(applied.to));
-        path = `/api/polls/overlapped?from=${fromIso}&to=${toIso}&page=${page}&size=${size}`;
+        path = `/api/polls/overlapped?from=${fromIso}&to=${toIso}&page=${p}&size=${size}`;
       }
       // 2) Search
       else if (hasQuery && applied.searchMode === "title") {
-        path = `/api/polls/search?title=${encodeURIComponent(applied.query.trim())}&page=${page}&size=${size}`;
+        path = `/api/polls/search?title=${encodeURIComponent(applied.query.trim())}&page=${p}&size=${size}`;
       } else if (hasQuery && applied.searchMode === "author") {
-        path = `/api/polls/search?author=${encodeURIComponent(applied.query.trim())}&page=${page}&size=${size}`;
+        path = `/api/polls/search?author=${encodeURIComponent(applied.query.trim())}&page=${p}&size=${size}`;
       }
       // 3) Status filter
       else if (applied.status === "open") {
-        path = `/api/polls/status/OPEN?page=${page}&size=${size}`;
+        path = `/api/polls/status/OPEN?page=${p}&size=${size}`;
       } else if (applied.status === "closed") {
-        path = `/api/polls/status/CLOSED?page=${page}&size=${size}`;
+        path = `/api/polls/status/CLOSED?page=${p}&size=${size}`;
       } else if (applied.status === "draft") {
-        path = `/api/polls/status/DRAFT?page=${page}&size=${size}`;
+        path = `/api/polls/status/DRAFT?page=${p}&size=${size}`;
       }
 
       const res = await api<PageLike<PollResponse>>(path, { method: "GET", auth: true });
@@ -150,7 +153,7 @@ export default function DashboardPage() {
       setMeta({
         page: res.number ?? 0,
         totalPages: res.totalPages,
-        hasNext: res.hasNext,
+        hasNext: res.hasNext ?? (res.last === false),
       });
     } catch (e: any) {
       setError(e?.message || "Erreur lors du chargement.");
@@ -163,9 +166,10 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchPolls();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applied]);
+  }, [applied, page]);
 
   function applyFilters() {
+    setPage(0);
     setApplied({ status, searchMode, query, from, to });
   }
 
@@ -175,6 +179,7 @@ export default function DashboardPage() {
     setQuery("");
     setFrom("");
     setTo("");
+    setPage(0);
     setApplied({ status: "all", searchMode: "title", query: "", from: "", to: "" });
   }
 
@@ -190,6 +195,10 @@ export default function DashboardPage() {
     "cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
   const btnGhost =
     "cursor-pointer inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
+  
+  const totalPages = meta.totalPages ?? 1;
+  const canPrev = page > 0;
+  const canNext = meta.totalPages !== undefined ? page < totalPages - 1 : !!meta.hasNext;
 
   return (
     <AuthGuard>
@@ -197,7 +206,7 @@ export default function DashboardPage() {
         <main className="mx-auto max-w-6xl px-4 py-2 space-y-4">
           {/* Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="text-center md:text-left text-2xl font-semibold uppercase tracking-[0.16em] text-zinc-600 uppercase">
+            <div className="text-center md:text-left text-2xl font-semibold uppercase tracking-[0.14em] text-zinc-600 uppercase">
               all polls
             </div>
             <Link href="/create" className={btnPrimary + "text-medium uppercase"}>
@@ -214,15 +223,6 @@ export default function DashboardPage() {
                 <p className="mt-1 text-sm text-zinc-600">
                   Status, search and date range.
                 </p>
-              </div>
-
-              <div className="flex items-center justify-center md:justify-end">
-                <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-700">
-                  {loading ? "Loading.." : `${filtered.length} displayed`}
-                  {meta.totalPages !== undefined ? ` · ${meta.totalPages} ${
-                    meta.totalPages > 1 ? "pages" : "page"
-                  }` : ""}
-                </span>
               </div>
             </div>
 
@@ -325,6 +325,48 @@ export default function DashboardPage() {
               )}
             </div>
           </section>
+
+          {/* Pagination */}
+          {(meta.totalPages ?? 1) > 1 && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center justify-center md:justify-end">
+                <span className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-800">
+                  {loading ? "Loading.." : `${filtered.length} displayed`}
+                  {meta.totalPages !== undefined ? ` · ${meta.totalPages} ${
+                    meta.totalPages > 1 ? "pages" : "page"
+                  }` : ""}
+                </span>
+              </div>
+              
+              <div className="inline-flex items-center rounded-xl border border-zinc-200 bg-white shadow-sm">
+                <button
+                type="button"
+                onClick={() => setPage((x) => Math.max(0, x - 1))}
+                disabled={!canPrev || loading}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-l-xl hover:bg-zinc-50 disabled:opacity-40"
+                aria-label="Previous page"
+                title="Previous page"
+                >
+                  <ChevronLeft className="h-5 w-5 text-zinc-700" />
+                </button>
+                
+                <div className="px-3 text-xs font-semibold text-zinc-700">
+                  Page {page + 1} / {totalPages}
+                </div>
+                
+                <button
+                type="button"
+                onClick={() => setPage((x) => x + 1)}
+                disabled={!canNext || loading}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-r-xl hover:bg-zinc-50 disabled:opacity-40"
+                aria-label="Next page"
+                title="Next page"
+                >
+                  <ChevronRight className="h-5 w-5 text-zinc-700" />
+                  </button>
+              </div>
+            </div>
+          )}
 
           {/* List */}
           <section className="grid gap-4 md:grid-cols-2">
