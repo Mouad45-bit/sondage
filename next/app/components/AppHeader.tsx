@@ -38,26 +38,20 @@ export function AppHeader() {
   const pathname = usePathname();
 
   const iconBtn =
-    "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-200";
+    "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-800";
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-zinc-50/80 backdrop-blur">
       <div className="mx-auto flex h-18 max-w-6xl items-center justify-between px-4">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <span className="text-xs font-semibold text-zinc-900">NS</span>
-          </div>
-          <div className="leading-tight">
-            <div className="text-sm font-semibold text-zinc-900">NoSQL Polls</div>
-            <div className="text-[11px] text-zinc-500">Sondages & votes</div>
-          </div>
+        <Link href="/" className="flex items-center gap-3 text-xl font-semibold text-zinc-900 uppercase leading-tight">
+        ppoll
         </Link>
 
         {/* Nav (desktop) */}
-        <nav className="hidden items-center gap-6 md:flex">
-          <NavLink href="/" label="Dashboard" />
-          <NavLink href="/polls" label="Mes sondages" />
+        <nav className="hidden items-center gap-6 text-xl uppercase md:flex">
+          <NavLink href="/" label="All polls" />
+          <NavLink href="/polls" label="My polls" />
         </nav>
 
         {/* Actions */}
