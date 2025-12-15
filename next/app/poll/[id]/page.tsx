@@ -32,10 +32,12 @@ function formatDate(iso: string) {
 function StatusBadge({ status }: { status: string }) {
   const s = status.toUpperCase();
   const base =
-    "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-wide";
+    "h-6 inline-flex items-center rounded-full border px-2 py-0.5 text-sm font-semibold tracking-wide";
   if (s === "OPEN")
     return (
-      <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>
+      <span
+        className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}
+      >
         OPEN
       </span>
     );
@@ -70,7 +72,10 @@ export default function PollDetailPage() {
   const isFav = useMemo(() => favorites.includes(id), [favorites, id]);
 
   const uid = useMemo(() => getUidFromToken(), []);
-  const isOwner = useMemo(() => (poll ? uid === poll.authorId : false), [poll, uid]);
+  const isOwner = useMemo(
+    () => (poll ? uid === poll.authorId : false),
+    [poll, uid]
+  );
 
   // vote
   const [selected, setSelected] = useState<number | null>(null);
@@ -80,7 +85,7 @@ export default function PollDetailPage() {
 
   // ----- styles (mêmes que Dashboard) -----
   const btnPrimary =
-    "cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
+    "cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-base font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
   const btnGhost =
     "cursor-pointer inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
 
@@ -93,10 +98,13 @@ export default function PollDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await api<PollResponse>(`/api/polls/${encodeURIComponent(id)}`, {
-          method: "GET",
-          auth: false,
-        });
+        const data = await api<PollResponse>(
+          `/api/polls/${encodeURIComponent(id)}`,
+          {
+            method: "GET",
+            auth: false,
+          }
+        );
         setPoll(data);
       } catch (e: any) {
         setError(e?.message || "Impossible de charger ce sondage.");
@@ -181,6 +189,8 @@ export default function PollDetailPage() {
 
   const st = String(poll.status).toUpperCase();
 
+  const canVoteInline = st === "OPEN" && !isOwner;
+
   return (
     <div className="min-h-screen bg-zinc-50">
       <main className="mx-auto max-w-6xl px-4 py-2 space-y-4">
@@ -188,51 +198,61 @@ export default function PollDetailPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <div className="flex items-center md:flex-1">
             <Link href="/" className={btnGhost} aria-label="Back" title="Back">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
             </Link>
           </div>
-          
+
           <div className="text-center text-2xl font-semibold uppercase tracking-[0.14em] text-zinc-600">
             poll details
           </div>
-          
-          <div className="flex items-center justify-center gap-2 md:flex-1 md:justify-end">
-            <StatusBadge status={st} />
-            <button
-            onClick={() => setFavorites(toggleFavorite(poll.id))}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
-            aria-label="Favori"
-            title="Favori"
-            >
-              <Star className={`h-5 w-5 ${isFav ? "fill-zinc-950 text-zinc-950" : "text-zinc-500"}`} />
-            </button>
-          </div>
+
+          <div className="flex md:flex-1 md:justify-end"></div>
         </div>
 
         {/* Details card */}
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <div className="mb-3">
-            <h1 className="text-xl truncate uppercase font-semibold text-zinc-950">{poll.title}</h1>
-            <p className="mt-1 text-base text-zinc-600">{poll.description || "—"}</p>
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl truncate uppercase font-semibold text-zinc-950">
+              {poll.title}
+            </h1>
+            <div className="flex gap-3 items-center">
+              <StatusBadge status={st} />
+              <button
+                onClick={() => setFavorites(toggleFavorite(poll.id))}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                aria-label="Favori"
+                title="Favori"
+              >
+                <Star
+                  className={`h-5 w-5 ${
+                    isFav ? "fill-zinc-950 text-zinc-950" : "text-zinc-500"
+                  }`}
+                />
+              </button>
+            </div>
           </div>
+
+          <p className="mb-3 text-lg text-zinc-600">
+            {poll.description || "—"}
+          </p>
 
           <div className="grid gap-4 md:grid-cols-2">
             {/* Dates */}
             <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-              <div className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-600">
+              <div className="text-base font-semibold uppercase tracking-[0.12em] text-zinc-600">
                 period
               </div>
               <div className="mt-3 grid gap-3">
                 <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2">
-                  <div className="text-[11px] text-zinc-500">Opening</div>
+                  <div className="text-sm text-zinc-500">Opening</div>
                   <div className="mt-1 text-sm font-semibold text-zinc-900">
                     {formatDate(poll.dateStart)}
                   </div>
                 </div>
 
                 <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2">
-                  <div className="text-[11px] text-zinc-500">Closing</div>
+                  <div className="text-sm text-zinc-500">Closing</div>
                   <div className="mt-1 text-sm font-semibold text-zinc-900">
                     {formatDate(poll.dateEnd)}
                   </div>
@@ -244,25 +264,92 @@ export default function PollDetailPage() {
             <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-600">
+                  <div className="text-base font-semibold uppercase tracking-[0.12em] text-zinc-600">
                     options
                   </div>
-                  <p className="mt-1 text-xs text-zinc-500">{poll.options.length}
-                    { poll.options.length > 1 ? "propositions" : "proposition" }
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {poll.options.length}{" "}
+                    {poll.options.length > 1 ? "propositions" : "proposition"}
                   </p>
                 </div>
+
+                {/* Badge vote fait (uniquement quand vote inline) */}
+                {canVoteInline && hasVotedLocal && (
+                  <div className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Vote done
+                  </div>
+                )}
               </div>
 
-              <ul className="mt-3 space-y-2">
-                {poll.options.map((opt, i) => (
-                  <li
-                    key={i}
-                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700"
-                  >
-                    {opt}
-                  </li>
-                ))}
-              </ul>
+              {/* === OPEN + non-owner => options = zone de vote === */}
+              {canVoteInline ? (
+                <>
+                  <div className="mt-4 space-y-2">
+                    {poll.options.map((opt, i) => {
+                      const active = selected === i;
+                      return (
+                        <label
+                          key={i}
+                          className={[
+                            "flex cursor-pointer items-center justify-between gap-3 rounded-xl border bg-white px-3 py-2 text-sm transition",
+                            active
+                              ? "border-zinc-950 ring-2 ring-zinc-300"
+                              : "border-zinc-200 hover:bg-zinc-50",
+                          ].join(" ")}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="vote"
+                              checked={active}
+                              onChange={() => setSelected(i)}
+                              className="h-4 w-4 accent-zinc-950"
+                            />
+                            <span className="text-zinc-800">{opt}</span>
+                          </div>
+
+                          <span
+                            className={[
+                              "h-2 w-2 rounded-full",
+                              active ? "bg-zinc-950" : "bg-zinc-200",
+                            ].join(" ")}
+                            aria-hidden
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {voteMsg && (
+                    <div className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">
+                      {voteMsg}
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={submitVote}
+                      disabled={voteLoading}
+                      className={btnPrimary}
+                    >
+                      {voteLoading ? "Sending.." : "Vote"}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                /* === sinon: affichage simple (DRAFT/CLOSED ou owner) === */
+                <ul className="mt-3 space-y-2">
+                  {poll.options.map((opt, i) => (
+                    <li
+                      key={i}
+                      className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700"
+                    >
+                      {opt}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </section>
@@ -271,7 +358,9 @@ export default function PollDetailPage() {
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div className="mb-3">
             <h2 className="text-xl font-semibold text-zinc-950">Actions</h2>
-            <p className="mt-1 text-base text-zinc-600">{isOwner ? "Owner" : "Visitor"}</p>
+            <p className="mt-1 text-base text-zinc-600">
+              {isOwner ? "Owner" : "Visitor"}
+            </p>
           </div>
 
           {/* Owner */}
@@ -300,75 +389,23 @@ export default function PollDetailPage() {
             <div className="space-y-4">
               {st === "OPEN" && (
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-600">
-                        participation
-                      </div>
-                      <div className="mt-1 text-sm font-semibold text-zinc-900">
-                        Choose an option and validate your vote
-                      </div>
-                    </div>
-
-                    {hasVotedLocal && (
-                      <div className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Vote done
-                      </div>
-                    )}
+                  <div className="text-sm font-semibold text-zinc-900">
+                    Opened poll
                   </div>
-
-                  <div className="mt-4 space-y-2">
-                    {poll.options.map((opt, i) => {
-                      const active = selected === i;
-                      return (
-                        <label
-                          key={i}
-                          className={[
-                            "flex cursor-pointer items-center justify-between gap-3 rounded-xl border bg-white px-3 py-2 text-sm transition",
-                            active
-                              ? "border-zinc-950 ring-2 ring-zinc-300"
-                              : "border-zinc-200 hover:bg-zinc-50",
-                          ].join(" ")}
-                        >
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="radio"
-                              name="vote"
-                              checked={active}
-                              onChange={() => setSelected(i)}
-                              className="h-4 w-4 accent-zinc-950"
-                            />
-                            <span className="text-zinc-800">{opt}</span>
-                          </div>
-
-                          <span
-                            className={["h-2 w-2 rounded-full", active ? "bg-zinc-950" : "bg-zinc-200"].join(" ")}
-                            aria-hidden
-                          />
-                        </label>
-                      );
-                    })}
-                  </div>
-
-                  {voteMsg && (
-                    <div className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">
-                      {voteMsg}
-                    </div>
-                  )}
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button onClick={submitVote} disabled={voteLoading} className={btnPrimary}>
-                      {voteLoading ? "Sending.." : "Vote"}
-                    </button>
-
-                    <Link href={`/poll/${poll.id}/progress`} className={btnGhost}>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    You can consult the progress or set a reminder to be notified when it's closed.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      href={`/poll/${poll.id}/progress`}
+                      className={btnGhost}
+                    >
                       See progress
                     </Link>
-
                     <button
                       onClick={() => {
-                        if (!uid) return requireLogin(router, `/poll/${poll.id}`);
+                        if (!uid)
+                          return requireLogin(router, `/poll/${poll.id}`);
                         addReminder(poll.id, "RESULTS", poll.dateEnd);
                         setVoteMsg("Results reminder set (local).");
                       }}
@@ -382,14 +419,19 @@ export default function PollDetailPage() {
 
               {st === "CLOSED" && (
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-                  <div className="text-sm font-semibold text-zinc-900">Draft poll</div>
+                  <div className="text-sm font-semibold text-zinc-900">
+                    Closed poll
+                  </div>
                   <p className="mt-1 text-sm text-zinc-600">
-                    You can set a reminder to be notified when it's opened.
+                    You can only consult the results.
                   </p>
 
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Link href={`/poll/${poll.id}/results`} className={btnPrimary}>
-                    See results
+                    <Link
+                      href={`/poll/${poll.id}/results`}
+                      className={btnPrimary}
+                    >
+                      See results
                     </Link>
                   </div>
                 </div>
@@ -397,7 +439,9 @@ export default function PollDetailPage() {
 
               {st === "DRAFT" && (
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-                  <div className="text-sm font-semibold text-zinc-900">Draft poll</div>
+                  <div className="text-sm font-semibold text-zinc-900">
+                    Draft poll
+                  </div>
                   <p className="mt-1 text-sm text-zinc-600">
                     You can set a reminder to be notified when it's opened.
                   </p>
