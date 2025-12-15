@@ -50,8 +50,8 @@ export function AppHeader() {
 
         {/* Nav (desktop) */}
         <nav className="hidden items-center gap-6 text-xl uppercase md:flex">
-          <NavLink href="/" label="All polls" />
-          <NavLink href="/polls" label="My polls" />
+          <NavLink href="/" label="Home" />
+          <NavLink href="/polls" label="Polls" />
         </nav>
 
         {/* Actions */}
