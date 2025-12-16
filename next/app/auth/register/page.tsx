@@ -62,129 +62,125 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="max-h-screen bg-zinc-50">
-      <div className="flex justify-center mx-auto max-w-6xl px-4 pb-0">
-        <div className="w-full max-w-2xl space-y-4">
-          {/* Header */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="text-left text-2xl font-semibold uppercase tracking-[0.14em] text-zinc-600">
-              register
-            </div>
-            <Link
-              href="/auth/login"
-              className={btnGhost + " h-11 w-full sm:w-auto"}
-            >
-              Already have an account ?&nbsp;<span className="uppercase">Log in</span>
-            </Link>
+    <div className="min-h-[calc(100vh-4rem)] bg-zinc-50 flex items-center justify-center px-4 mt-4">
+      <div className="w-full max-w-2xl space-y-4">
+        {/* Header */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="text-left text-2xl font-semibold uppercase tracking-[0.14em] text-zinc-600">
+            register
+          </div>
+          <Link
+            href="/auth/login"
+            className={btnGhost + " h-11 w-full sm:w-auto"}
+          >
+            Already have an account ?&nbsp;
+            <span className="uppercase">Log in</span>
+          </Link>
+        </div>
+
+        {/* Main card (like Filters card) */}
+        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <h2 className="text-xl font-semibold text-zinc-950">
+              Create an account
+            </h2>
           </div>
 
-          {/* Main card (like Filters card) */}
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <h2 className="text-xl font-semibold text-zinc-950">
-                Create an account
-              </h2>
-            </div>
-
-            {/* Mini info (like your dashboard sub-blocks) */}
-            <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white">
-                  <Shield className="h-5 w-5 text-zinc-700" />
-                </span>
-                <div>
-                  <div className="text-base font-semibold uppercase tracking-[0.12em] text-zinc-600">
-                    account
-                  </div>
-                  <div className="mt-1 text-sm text-zinc-600">
-                    Your account is used to create polls, vote, and view
-                    progress.
-                  </div>
+          {/* Mini info (like your dashboard sub-blocks) */}
+          <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white">
+                <Shield className="h-5 w-5 text-zinc-700" />
+              </span>
+              <div>
+                <div className="text-base font-semibold uppercase tracking-[0.12em] text-zinc-600">
+                  account
+                </div>
+                <div className="mt-1 text-sm text-zinc-600">
+                  Your account is used to create polls, vote, and view progress.
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Form */}
-            <form onSubmit={onSubmit} className="mt-4 grid gap-4">
-              <div className="flex flex-col gap-1">
-                <div>
-                  <label className="text-sm uppercase font-semibold text-zinc-700">
-                    Username
-                  </label>
-                  <input
-                    className={"mt-1 " + inputBase}
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    autoComplete="username"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm uppercase font-semibold text-zinc-700">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    className={"mt-1 " + inputBase}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="new-password"
-                    required
-                  />
-                </div>
-              </div>
+          {/* Form */}
+          <form onSubmit={onSubmit} className="mt-4 grid gap-4">
+            <div className="flex flex-col gap-1">
               <div>
                 <label className="text-sm uppercase font-semibold text-zinc-700">
-                  Confirm password
+                  Username
                 </label>
                 <input
-                  type="password"
                   className={"mt-1 " + inputBase}
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  autoComplete="new-password"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoComplete="username"
                   required
                 />
               </div>
 
-              {/* Hint box (same visual language) */}
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-600">
-                  rules
-                </div>
-                <div className="mt-2 text-sm text-zinc-600">
-                  Passwords must match before creation.
-                </div>
+              <div>
+                <label className="text-sm uppercase font-semibold text-zinc-700">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  className={"mt-1 " + inputBase}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  required
+                />
               </div>
+            </div>
+            <div>
+              <label className="text-sm uppercase font-semibold text-zinc-700">
+                Confirm password
+              </label>
+              <input
+                type="password"
+                className={"mt-1 " + inputBase}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                autoComplete="new-password"
+                required
+              />
+            </div>
 
-              {error && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-sm">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="mt-0.5 h-4 w-4" />
-                    <div>
-                      <div className="font-semibold">
-                        Inscription impossible
-                      </div>
-                      <div className="mt-1">{error}</div>
-                    </div>
+            {/* Hint box (same visual language) */}
+            <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-600">
+                rules
+              </div>
+              <div className="mt-2 text-sm text-zinc-600">
+                Passwords must match before creation.
+              </div>
+            </div>
+
+            {error && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-sm">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-4 w-4" />
+                  <div>
+                    <div className="font-semibold">Inscription impossible</div>
+                    <div className="mt-1">{error}</div>
                   </div>
                 </div>
-              )}
-
-              {/* Actions */}
-              <div className="mt-3 flex sm:flex-row items-center justify-center">
-                <button
-                  disabled={loading || !canSubmit}
-                  className={btnPrimary + " h-11 w-full sm:w-auto"}
-                >
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  {loading ? "Creating.." : "Create an account"}
-                </button>
               </div>
-            </form>
-          </section>
-        </div>
+            )}
+
+            {/* Actions */}
+            <div className="mt-3 flex sm:flex-row items-center justify-center">
+              <button
+                disabled={loading || !canSubmit}
+                className={btnPrimary + " h-11 w-full sm:w-auto"}
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                {loading ? "Creating.." : "Create an account"}
+              </button>
+            </div>
+          </form>
+        </section>
       </div>
     </div>
   );
