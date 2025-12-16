@@ -1,15 +1,19 @@
-// app/poll/[id]/update/page.tsx
-
 "use client";
 
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { AuthGuard } from "@/app/components/AuthGuard";
-import { ProCard } from "@/app/components/ProCard";
 import { api } from "../../../lib/api";
 import { getUidFromToken } from "../../../lib/jwt";
-import { Plus, Save, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  ListChecks,
+  Plus,
+  Save,
+  Trash2,
+} from "lucide-react";
 
 type PollStatus = "DRAFT" | "OPEN" | "CLOSED";
 
@@ -44,6 +48,29 @@ function formatDate(iso: string) {
   return d.toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" });
 }
 
+function StatusBadge({ status }: { status: string }) {
+  const s = status.toUpperCase();
+  const base =
+    "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-wide";
+  if (s === "OPEN")
+    return (
+      <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>
+        OPEN
+      </span>
+    );
+  if (s === "CLOSED")
+    return (
+      <span className={`${base} border-zinc-200 bg-zinc-100 text-zinc-700`}>
+        CLOSED
+      </span>
+    );
+  return (
+    <span className={`${base} border-amber-200 bg-amber-50 text-amber-700`}>
+      DRAFT
+    </span>
+  );
+}
+
 export default function PollUpdatePage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -52,6 +79,7 @@ export default function PollUpdatePage() {
   const uid = useMemo(() => getUidFromToken(), []);
   const [poll, setPoll] = useState<PollResponse | null>(null);
 
+  // champs éditables
   const [description, setDescription] = useState("");
   const [dateStart, setDateStart] = useState("");
   const [dateEnd, setDateEnd] = useState("");
@@ -62,8 +90,22 @@ export default function PollUpdatePage() {
   const [error, setError] = useState<string | null>(null);
   const [okMsg, setOkMsg] = useState<string | null>(null);
 
-  const isOwner = useMemo(() => (poll ? uid === poll.authorId : false), [poll, uid]);
+  const isOwner = useMemo(
+    () => (poll ? uid === poll.authorId : false),
+    [poll, uid]
+  );
   const status = useMemo(() => String(poll?.status || "").toUpperCase(), [poll]);
+
+  // ----- styles: EXACTEMENT comme Create -----
+  const inputBase =
+    "h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-500 outline-none focus:ring-2 focus:ring-zinc-300";
+  const textareaBase =
+    "min-h-[60px] w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 outline-none focus:ring-2 focus:ring-zinc-300";
+
+  const btnPrimary =
+    "cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
+  const btnGhost =
+    "cursor-pointer inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
 
   useEffect(() => {
     async function load() {
@@ -95,22 +137,21 @@ export default function PollUpdatePage() {
   function updateOption(i: number, value: string) {
     setOptions((prev) => prev.map((o, idx) => (idx === i ? value : o)));
   }
-
   function addOption() {
     setOptions((prev) => [...prev, ""]);
   }
-
   function removeOption(i: number) {
     setOptions((prev) => prev.filter((_, idx) => idx !== i));
   }
 
   function validateLocal() {
     if (!poll) return "Sondage introuvable.";
-
     if (!isOwner) return "Accès refusé : vous n’êtes pas propriétaire.";
-    if (status !== "DRAFT") return "Modification autorisée uniquement pour les sondages DRAFT.";
+    if (status !== "DRAFT")
+      return "Modification autorisée uniquement pour les sondages DRAFT.";
 
     if (!dateStart || !dateEnd) return "dateStart et dateEnd sont obligatoires.";
+
     const startMs = new Date(toIsoSeconds(dateStart)).getTime();
     const endMs = new Date(toIsoSeconds(dateEnd)).getTime();
     if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return "Dates invalides.";
@@ -132,10 +173,7 @@ export default function PollUpdatePage() {
     setOkMsg(null);
 
     const localErr = validateLocal();
-    if (localErr) {
-      setError(localErr);
-      return;
-    }
+    if (localErr) return setError(localErr);
 
     setSaving(true);
     try {
@@ -161,29 +199,26 @@ export default function PollUpdatePage() {
     }
   }
 
+  const cleanedCount = useMemo(
+    () => options.map((s) => s.trim()).filter((s) => s.length > 0).length,
+    [options]
+  );
+
+  // ---- states (on garde tes screens, mais on peut garder simple)
   if (loading) {
     return (
       <AuthGuard>
         <div className="min-h-screen bg-zinc-50">
-          <main className="mx-auto max-w-6xl px-4 py-6 md:py-8">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <main className="mx-auto max-w-6xl px-4 py-2 space-y-4">
+            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                    Modification
+                    update poll
                   </div>
-                  <div className="mt-1 text-sm font-medium text-zinc-900">Chargement…</div>
+                  <div className="mt-1 text-sm text-zinc-600">Chargement…</div>
                 </div>
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
-              </div>
-              <div className="mt-6 space-y-3">
-                <div className="h-3 w-2/3 rounded-full bg-zinc-100" />
-                <div className="h-10 w-full rounded-xl bg-zinc-100" />
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="h-10 rounded-xl bg-zinc-100" />
-                  <div className="h-10 rounded-xl bg-zinc-100" />
-                </div>
-                <div className="h-10 w-full rounded-xl bg-zinc-100" />
               </div>
             </div>
           </main>
@@ -196,15 +231,12 @@ export default function PollUpdatePage() {
     return (
       <AuthGuard>
         <div className="min-h-screen bg-zinc-50">
-          <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 space-y-4">
+          <main className="mx-auto max-w-6xl px-4 py-2 space-y-4">
             <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
               {error || "Sondage introuvable."}
             </div>
-            <Link
-              href="/polls"
-              className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50"
-            >
-              Retour à mes sondages
+            <Link href="/polls" className={btnGhost}>
+              Back to polls
             </Link>
           </main>
         </div>
@@ -216,7 +248,7 @@ export default function PollUpdatePage() {
     return (
       <AuthGuard>
         <div className="min-h-screen bg-zinc-50">
-          <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 space-y-4">
+          <main className="mx-auto max-w-6xl px-4 py-2 space-y-4">
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
               {!isOwner
                 ? "Accès refusé : vous n’êtes pas propriétaire de ce sondage."
@@ -224,17 +256,11 @@ export default function PollUpdatePage() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Link
-                href={`/poll/${poll.id}`}
-                className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800"
-              >
-                Retour détails
+              <Link href={`/poll/${poll.id}`} className={btnPrimary}>
+                Back to details
               </Link>
-              <Link
-                href="/polls"
-                className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50"
-              >
-                Mes sondages
+              <Link href="/polls" className={btnGhost}>
+                My polls
               </Link>
             </div>
           </main>
@@ -246,104 +272,122 @@ export default function PollUpdatePage() {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-zinc-50">
-        <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 space-y-5">
-          <ProCard
-            title="Modifier le sondage"
-            subtitle={`${poll.title} • DRAFT`}
-            right={
-              <Link
-                href={`/poll/${poll.id}`}
-                className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50"
-              >
-                Retour détails
-              </Link>
-            }
-          >
-            <div className="mt-1 rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                Informations actuelles
-              </div>
-              <div className="mt-2 grid gap-2 md:grid-cols-2">
-                <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2">
-                  <div className="text-[11px] text-zinc-500">Ouverture</div>
-                  <div className="text-sm font-medium text-zinc-900">{formatDate(poll.dateStart)}</div>
-                </div>
-                <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2">
-                  <div className="text-[11px] text-zinc-500">Fermeture</div>
-                  <div className="text-sm font-medium text-zinc-900">{formatDate(poll.dateEnd)}</div>
-                </div>
-              </div>
+        <main className="mx-auto max-w-6xl px-4 py-2 space-y-4">
+          {/* Header: EXACTEMENT comme Create */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
+            <div className="flex items-center md:flex-1">
+              <button type="button" onClick={() => router.back()} className={btnGhost}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </button>
             </div>
 
-            <form onSubmit={onSave} className="mt-5 space-y-5">
-              {/* Description */}
-              <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
-                <div className="mb-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+            <div className="text-center text-2xl font-semibold uppercase tracking-[0.14em] text-zinc-600">
+              update poll
+            </div>
+
+            <div className="flex md:flex-1 md:justify-end" />
+          </div>
+
+          {/* Card unique (même look que Create) */}
+          <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <form onSubmit={onSave} className="space-y-4">
+              {/* Title + Description : même grille que Create */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                  <div className="text-base font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                    Title
+                  </div>
+                  <div className="mt-2 rounded-xl border border-zinc-200 bg-zinc-50/70 px-3 py-2 text-sm text-zinc-900">
+                    {poll.title}
+                  </div>
+                  <div className="flex justify-end mr-2">
+                    <p className="mt-2 text-xs text-zinc-500">
+                      Title is not editable
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                  <div className="text-base font-semibold uppercase tracking-[0.16em] text-zinc-500">
                     Description
                   </div>
-                  <p className="mt-1 text-xs text-zinc-500">Optionnel, visible sur la page du sondage.</p>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className={"mt-2 " + textareaBase}
+                    placeholder="(Optional)"
+                  />
+                  <div className="flex justify-end mr-2">
+                    <p className="mt-1 text-xs text-zinc-500">Optional</p>
+                  </div>
                 </div>
-
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="min-h-[110px] w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-300"
-                  placeholder="(Optionnel)"
-                />
               </div>
 
-              {/* Dates */}
-              <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
-                <div className="mb-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                    Période
+              {/* Dates : même bloc que Create */}
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
+                <div className="flex items-start gap-2">
+                  <Calendar className="mt-0.5 h-4 w-4 text-zinc-500" />
+                  <div>
+                    <div className="text-base font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                      Period
+                    </div>
+                    <div className="mt-1 text-xs text-zinc-600">
+                      dateStart must be &gt; now + 1 hour
+                    </div>
+                    <div className="mt-1 text-xs text-zinc-500">
+                      Current: {formatDate(poll.dateStart)} → {formatDate(poll.dateEnd)}
+                    </div>
                   </div>
-                  <p className="mt-1 text-xs text-zinc-500">dateStart doit être ≥ maintenant + 1h.</p>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <div>
-                    <label className="text-xs text-zinc-600">Ouverture (dateStart)</label>
+                    <label className="text-sm font-semibold text-zinc-700">
+                      Opening
+                    </label>
                     <input
                       type="datetime-local"
                       value={dateStart}
                       onChange={(e) => setDateStart(e.target.value)}
-                      className="mt-1 h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-zinc-300"
+                      className={"mt-1 " + inputBase}
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs text-zinc-600">Fermeture (dateEnd)</label>
+                    <label className="text-sm font-semibold text-zinc-700">
+                      Closing
+                    </label>
                     <input
                       type="datetime-local"
                       value={dateEnd}
                       onChange={(e) => setDateEnd(e.target.value)}
-                      className="mt-1 h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-zinc-300"
+                      className={"mt-1 " + inputBase}
                       required
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Options */}
-              <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                      Options
+              {/* Options : même bloc que Create */}
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-start gap-2">
+                    <ListChecks className="mt-0.5 h-4 w-4 text-zinc-500" />
+                    <div>
+                      <div className="text-base font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                        Options
+                      </div>
+                      <div className="mt-1 text-xs text-zinc-600">
+                        Minimum 2 · each option &lt; 80 characters.
+                      </div>
                     </div>
-                    <p className="mt-1 text-xs text-zinc-500">Minimum 2 • Chaque option ≤ 80 caractères.</p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={addOption}
-                    className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Ajouter
+                  <button type="button" onClick={addOption} className={btnGhost}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add option
                   </button>
                 </div>
 
@@ -353,17 +397,18 @@ export default function PollUpdatePage() {
                       <input
                         value={opt}
                         onChange={(e) => updateOption(i, e.target.value)}
-                        className="h-10 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-zinc-300"
+                        className={"flex-1 " + inputBase}
                         placeholder={`Option ${i + 1}`}
                         maxLength={80}
                       />
+
                       <button
                         type="button"
                         onClick={() => removeOption(i)}
                         disabled={options.length <= 2}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:opacity-40"
-                        title="Supprimer"
-                        aria-label="Supprimer"
+                        className="cursor-pointer inline-flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        title="Remove"
+                        aria-label="Remove"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -372,37 +417,45 @@ export default function PollUpdatePage() {
                 </div>
               </div>
 
+              {/* Toasts */}
               {error && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                   {error}
                 </div>
               )}
               {okMsg && (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
                   {okMsg}
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 disabled:opacity-60"
-                >
-                  <Save className="h-4 w-4" />
-                  {saving ? "Enregistrement…" : "Enregistrer"}
+              {/* Footer right badges like Create */}
+              <div className="flex md:flex-1 md:justify-end">
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={status} />
+                  <span className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold text-zinc-700">
+                    {cleanedCount} {cleanedCount <= 1 ? "option" : "options"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actions like Create */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <button disabled={saving} className={btnPrimary + " h-11 px-5"}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {saving ? "Saving.." : "Save changes"}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => router.back()}
-                  className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50"
+                  className={btnGhost + " h-11 px-5"}
                 >
-                  Annuler
+                  Cancel
                 </button>
               </div>
             </form>
-          </ProCard>
+          </section>
         </main>
       </div>
     </AuthGuard>
