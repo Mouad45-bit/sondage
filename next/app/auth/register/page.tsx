@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { api } from "../../lib/api";
 import { setToken } from "../../lib/auth";
-import { UserPlus, ArrowLeft, Dot, Shield, AlertTriangle } from "lucide-react";
+import { UserPlus, Shield, AlertTriangle } from "lucide-react";
 
 type AuthResponse = { token: string };
 

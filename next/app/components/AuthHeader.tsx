@@ -1,10 +1,9 @@
-// app/components/AppHeader.tsx
+// app/components/AuthHeader.tsx
 
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, UserCircle2 } from "lucide-react";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -34,14 +33,7 @@ function NavLink({ href, label }: { href: string; label: string }) {
   );
 }
 
-export function AppHeader() {
-  const pathname = usePathname();
-
-  const iconBtn =
-    "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-800";
-
-  if (pathname.startsWith("/auth")) return null;
-
+export function AuthHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-zinc-50/80 backdrop-blur">
       <div className="mx-auto flex h-18 max-w-6xl items-center justify-between px-4">
@@ -55,29 +47,12 @@ export function AppHeader() {
 
         {/* Nav (desktop) */}
         <nav className="hidden items-center gap-6 text-xl uppercase md:flex">
-          <NavLink href="/" label="Home" />
-          <NavLink href="/polls" label="Polls" />
+          <NavLink href="/auth/register" label="Register" />
+          <NavLink href="/auth/login" label="Login" />
         </nav>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <Link
-            href="/notifications"
-            className={iconBtn}
-            aria-label="Notifications"
-            title="Notifications"
-          >
-            <Bell className="h-5 w-5" />
-          </Link>
-
-          <Link
-            href="/profile"
-            className={iconBtn}
-            aria-label="Profil"
-            title="Profil"
-          >
-            <UserCircle2 className="h-5 w-5" />
-          </Link>
         </div>
       </div>
     </header>

@@ -62,20 +62,22 @@ export default function LoginPage() {
           {/* Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="text-left text-2xl font-semibold uppercase tracking-[0.14em] text-zinc-600">
-              login
+              log in
             </div>
 
-            <Link href="/auth/register" className={btnGhost + " h-11 w-full sm:w-auto"}>
-              Don&apos;t have an account ?&nbsp;<span className="uppercase">Register</span>
+            <Link
+              href="/auth/register"
+              className={btnGhost + " h-11 w-full sm:w-auto"}
+            >
+              Don&apos;t have an account ?&nbsp;
+              <span className="uppercase">Register</span>
             </Link>
           </div>
 
           {/* Main card */}
           <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <h2 className="text-xl font-semibold text-zinc-950">
-                Sign in
-              </h2>
+              <h2 className="text-xl font-semibold text-zinc-950">Sign in</h2>
             </div>
 
             {/* Mini info */}
