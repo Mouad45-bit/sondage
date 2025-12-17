@@ -176,111 +176,104 @@ export function BotChatWidget() {
   return (
     <div className="fixed bottom-6 right-6 z-[60]">
       {/* Popup */}
-      <div
-        ref={panelRef}
-        className={cx(
-          "pointer-events-none absolute bottom-16 right-0 w-[360px] max-w-[calc(100vw-3rem)]",
-          "transition-all duration-200",
-          open ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-        )}
-      >
+      {open && (
         <div
-          className={cx(
-            "pointer-events-auto overflow-hidden rounded-2xl border border-zinc-200 bg-white/95 shadow-xl backdrop-blur",
-            "h-[520px] max-h-[calc(100vh-8rem)] flex flex-col"
-          )}
+          ref={panelRef}
+          className="absolute bottom-16 right-0 w-[360px] max-w-[calc(100vw-3rem)]"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
-            <div className="min-w-0 text-sm font-semibold text-zinc-900">
-              Bot Assistant
+          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white/95 shadow-xl backdrop-blur h-[520px] max-h-[calc(100vh-8rem)] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
+              <div className="min-w-0 text-sm font-semibold text-zinc-900">
+                Bot Assistant
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={clearChat}
+                  className="cursor-pointer rounded-lg px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="cursor-pointer inline-flex h-9 w-9 items-center justify-center rounded-xl hover:bg-zinc-100"
+                  aria-label="Fermer"
+                >
+                  <X className="h-5 w-5 text-zinc-700" />
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={clearChat}
-                className="cursor-pointer rounded-lg px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
-              >
-                Clear
-              </button>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="cursor-pointer inline-flex h-9 w-9 items-center justify-center rounded-xl hover:bg-zinc-100"
-                aria-label="Fermer"
-              >
-                <X className="h-5 w-5 text-zinc-700" />
-              </button>
-            </div>
-          </div>
-
-          {/* Messages */}
-          <div data-scroll="true" className="flex-1 overflow-auto px-4 py-3">
-            {messages.length > 0 && (
-              <div className="space-y-3">
-                {messages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={cx(
-                      "flex",
-                      m.role === "user" ? "justify-end" : "justify-start"
-                    )}
-                  >
+            {/* Messages */}
+            <div data-scroll="true" className="flex-1 overflow-auto px-4 py-3">
+              {messages.length > 0 && (
+                <div className="space-y-3">
+                  {messages.map((m) => (
                     <div
+                      key={m.id}
                       className={cx(
-                        "max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed",
-                        m.role === "user"
-                          ? "bg-zinc-900 text-white"
-                          : "bg-zinc-100 text-zinc-900"
+                        "flex",
+                        m.role === "user" ? "justify-end" : "justify-start"
                       )}
                     >
-                      {m.text}
+                      <div
+                        className={cx(
+                          "max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed",
+                          m.role === "user"
+                            ? "bg-zinc-900 text-white"
+                            : "bg-zinc-100 text-zinc-900"
+                        )}
+                      >
+                        {m.text}
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {sending && (
-                  <div className="flex justify-start">
-                    <div className="inline-flex items-center gap-2 rounded-2xl bg-zinc-100 px-3 py-2 text-sm text-zinc-700">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      The bot is thinking..
+                  ))}
+                  {sending && (
+                    <div className="flex justify-start">
+                      <div className="inline-flex items-center gap-2 rounded-2xl bg-zinc-100 px-3 py-2 text-sm text-zinc-700">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        The bot is thinking..
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                  )}
+                </div>
+              )}
+            </div>
 
-          {/* Input */}
-          <div className="border-t border-zinc-200 p-3">
-            <div className="flex items-center gap-2">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") onSend();
-                }}
-                placeholder="Write your message.."
-                className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-500 focus:border-zinc-400"
-              />
-              <button
-                type="button"
-                onClick={onSend}
-                disabled={!canSend}
-                className={cx(
-                  "cursor-pointer inline-flex h-11 w-11 items-center justify-center rounded-xl",
-                  canSend
-                    ? "bg-zinc-900 text-white hover:bg-zinc-800"
-                    : "bg-zinc-200 text-zinc-500"
-                )}
-                aria-label="Envoyer"
-              >
-                <Send className="h-4 w-4" />
-              </button>
+            {/* Input */}
+            <div className="border-t border-zinc-200 p-3">
+              <div className="flex items-center gap-2">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") onSend();
+                  }}
+                  placeholder="Write your message.."
+                  className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-500 focus:border-zinc-400"
+                />
+                <button
+                  type="button"
+                  onClick={onSend}
+                  disabled={!canSend}
+                  className={cx(
+                    "cursor-pointer inline-flex h-11 w-11 items-center justify-center rounded-xl",
+                    canSend
+                      ? "bg-zinc-900 text-white hover:bg-zinc-800"
+                      : "bg-zinc-200 text-zinc-500"
+                  )}
+                  aria-label="Envoyer"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Bouton flottant */}
       <button
