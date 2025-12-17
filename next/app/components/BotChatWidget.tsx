@@ -18,13 +18,16 @@ function uid() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+const WELCOME_TEXT = "Hello there, ask me anything about sports!";
+
 function cx(...classes: Array<string | false | undefined | null>) {
   return classes.filter(Boolean).join(" ");
 }
 
 async function askBot(userText: string) {
-  // ✅ adapte l’URL à TON backend
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+  // adapte l’URL à TON backend
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
   const url = `${baseUrl}/api/bot/chat`;
 
   const res = await fetch(url, {
@@ -41,12 +44,10 @@ async function askBot(userText: string) {
   const data = await res.json();
 
   // On accepte plusieurs formats possibles pour éviter de bloquer
-  return (
-    data?.reply ??
+  return (data?.reply ??
     data?.message ??
     data?.text ??
-    "Je n’ai pas compris la réponse du serveur."
-  ) as string;
+    "I didn't understand the server's response.") as string;
 }
 
 export function BotChatWidget() {
@@ -95,7 +96,10 @@ export function BotChatWidget() {
     };
   }, [open]);
 
-  const canSend = useMemo(() => input.trim().length > 0 && !sending, [input, sending]);
+  const canSend = useMemo(
+    () => input.trim().length > 0 && !sending,
+    [input, sending]
+  );
 
   useEffect(() => {
     // auto-scroll à l’ouverture / nouveaux messages
@@ -105,6 +109,20 @@ export function BotChatWidget() {
     (el as HTMLDivElement).scrollTop = (el as HTMLDivElement).scrollHeight;
   }, [open, messages.length]);
 
+  useEffect(() => {
+    if (messages.length > 0) return;
+
+    const welcome: ChatMessage = {
+      id: uid(),
+      role: "bot",
+      text: WELCOME_TEXT,
+      createdAt: Date.now(),
+    };
+
+    setMessages([welcome]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function onSend() {
     const text = input.trim();
     if (!text || sending) return;
@@ -112,19 +130,29 @@ export function BotChatWidget() {
     setInput("");
     setSending(true);
 
-    const userMsg: ChatMessage = { id: uid(), role: "user", text, createdAt: Date.now() };
+    const userMsg: ChatMessage = {
+      id: uid(),
+      role: "user",
+      text,
+      createdAt: Date.now(),
+    };
     setMessages((prev) => [...prev, userMsg]);
 
     try {
       const reply = await askBot(text);
-      const botMsg: ChatMessage = { id: uid(), role: "bot", text: reply, createdAt: Date.now() };
-      setMessages((prev) => [...prev, botMsg]);
-    } catch (e) {
-      // ✅ non bloquant: on affiche une bulle d’erreur, et on continue
       const botMsg: ChatMessage = {
         id: uid(),
         role: "bot",
-        text: "⚠️ Impossible de contacter le bot pour le moment. Réessaie.",
+        text: reply,
+        createdAt: Date.now(),
+      };
+      setMessages((prev) => [...prev, botMsg]);
+    } catch (e) {
+      // non bloquant: on affiche une bulle d’erreur, et on continue
+      const botMsg: ChatMessage = {
+        id: uid(),
+        role: "bot",
+        text: "Unable to contact the bot at this time. Please try again.",
         createdAt: Date.now(),
       };
       setMessages((prev) => [...prev, botMsg]);
@@ -134,8 +162,15 @@ export function BotChatWidget() {
   }
 
   function clearChat() {
-    setMessages([]);
-    localStorage.removeItem("bot_chat_messages");
+    const welcome: ChatMessage = {
+      id: uid(),
+      role: "bot",
+      text: WELCOME_TEXT,
+      createdAt: Date.now(),
+    };
+
+    setMessages([welcome]);
+    localStorage.setItem("bot_chat_messages", JSON.stringify([welcome]));
   }
 
   return (
@@ -157,23 +192,22 @@ export function BotChatWidget() {
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
-            <div className="min-w-0">
-              <div className="text-sm font-semibold text-zinc-900">Bot Assistant</div>
-              <div className="text-xs text-zinc-600">Pose une question sur l’app</div>
+            <div className="min-w-0 text-sm font-semibold text-zinc-900">
+              Bot Assistant
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={clearChat}
-                className="rounded-lg px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                className="cursor-pointer rounded-lg px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
               >
-                Effacer
+                Clear
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-xl hover:bg-zinc-100"
+                className="cursor-pointer inline-flex h-9 w-9 items-center justify-center rounded-xl hover:bg-zinc-100"
                 aria-label="Fermer"
               >
                 <X className="h-5 w-5 text-zinc-700" />
@@ -183,11 +217,7 @@ export function BotChatWidget() {
 
           {/* Messages */}
           <div data-scroll="true" className="flex-1 overflow-auto px-4 py-3">
-            {messages.length === 0 ? (
-              <div className="mt-10 text-center text-sm text-zinc-600">
-                Écris un message pour démarrer la discussion.
-              </div>
-            ) : (
+            {messages.length > 0 && (
               <div className="space-y-3">
                 {messages.map((m) => (
                   <div
@@ -213,7 +243,7 @@ export function BotChatWidget() {
                   <div className="flex justify-start">
                     <div className="inline-flex items-center gap-2 rounded-2xl bg-zinc-100 px-3 py-2 text-sm text-zinc-700">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Le bot réfléchit…
+                      The bot is thinking..
                     </div>
                   </div>
                 )}
@@ -230,7 +260,7 @@ export function BotChatWidget() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") onSend();
                 }}
-                placeholder="Écris ton message…"
+                placeholder="Write your message.."
                 className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-500 focus:border-zinc-400"
               />
               <button
@@ -238,8 +268,10 @@ export function BotChatWidget() {
                 onClick={onSend}
                 disabled={!canSend}
                 className={cx(
-                  "inline-flex h-11 w-11 items-center justify-center rounded-xl",
-                  canSend ? "bg-zinc-900 text-white hover:bg-zinc-800" : "bg-zinc-200 text-zinc-500"
+                  "cursor-pointer inline-flex h-11 w-11 items-center justify-center rounded-xl",
+                  canSend
+                    ? "bg-zinc-900 text-white hover:bg-zinc-800"
+                    : "bg-zinc-200 text-zinc-500"
                 )}
                 aria-label="Envoyer"
               >
@@ -257,7 +289,7 @@ export function BotChatWidget() {
         className={cx(
           "inline-flex h-14 w-14 items-center justify-center rounded-full",
           "bg-zinc-900 text-white shadow-lg hover:bg-zinc-800",
-          "border border-white/10"
+          "border border-white/10 cursor-pointer"
         )}
         aria-label="Ouvrir le chat"
       >
