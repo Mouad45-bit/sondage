@@ -94,7 +94,7 @@ public class VoteService {
                             optStat.index(),
                             optStat.label(),
                             optStat.votes(),
-                            (optStat.percentage() * 100.0) / total
+                            (optStat.votes() * 100.0) / total
                     ))
                     .toList();
         }
