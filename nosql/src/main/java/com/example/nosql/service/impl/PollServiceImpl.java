@@ -162,7 +162,7 @@ public class PollServiceImpl implements PollService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Options must be less than 80 characters");
             }
             //
-            poll.setDescription(newPoll.getDescription());
+            poll.setOptions(newPoll.getOptions());
         }
         //
         if (newPoll.getDateStart() != null) {
