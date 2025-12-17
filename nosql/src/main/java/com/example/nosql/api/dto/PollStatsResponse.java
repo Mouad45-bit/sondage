@@ -6,7 +6,7 @@ import java.util.List;
 
 public record PollStatsResponse(
         String pollId,
-        String titre,
+        String title,
         String description,
         PollStatus status,
         long totalVotes,
