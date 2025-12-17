@@ -7,7 +7,16 @@ import { AuthGuard } from "./components/AuthGuard";
 import { api } from "./lib/api";
 import { getFavorites, toggleFavorite } from "./lib/favorites";
 import { addReminder } from "./lib/reminders";
-import { Calendar, Plus, Search, Star, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Calendar,
+  Plus,
+  Search,
+  Star,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCcw,
+} from "lucide-react";
 
 type PollStatus = "DRAFT" | "OPEN" | "CLOSED";
 
@@ -55,7 +64,9 @@ function StatusBadge({ status }: { status: string }) {
     "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-wide";
   if (s === "OPEN")
     return (
-      <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>
+      <span
+        className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}
+      >
         OPEN
       </span>
     );
@@ -81,23 +92,25 @@ export default function DashboardPage() {
   const [to, setTo] = useState(""); // datetime-local
   const [page, setPage] = useState(0);
 
-  // Applied state (déclenche fetch)
-  const [applied, setApplied] = useState({
-    status: "all" as StatusFilter,
-    searchMode: "title" as SearchMode,
-    query: "",
-    from: "",
-    to: "",
-  });
-
   const [favorites, setFavorites] = useState<string[]>([]);
   const [data, setData] = useState<PollResponse[]>([]);
-  const [meta, setMeta] = useState<{ page: number; totalPages?: number; hasNext?: boolean }>({
+  const [meta, setMeta] = useState<{
+    page: number;
+    totalPages?: number;
+    hasNext?: boolean;
+  }>({
     page: 0,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(t);
+  }, [query]);
 
   useEffect(() => {
     setFavorites(getFavorites());
@@ -110,9 +123,9 @@ export default function DashboardPage() {
   }, [toast]);
 
   const filtered = useMemo(() => {
-    if (applied.status !== "favorites") return data;
+    if (status !== "favorites") return data;
     return data.filter((p) => favorites.includes(p.id));
-  }, [data, applied.status, favorites]);
+  }, [data, status, favorites]);
 
   async function fetchPolls() {
     setLoading(true);
@@ -122,38 +135,45 @@ export default function DashboardPage() {
       const size = PAGE_SIZE;
       const p = page;
 
-      const hasDateRange = !!applied.from && !!applied.to;
-      const hasQuery = applied.query.trim().length > 0;
+      const hasDateRange = !!from && !!to;
+      const hasQuery = debouncedQuery.trim().length > 0;
 
       let path = `/api/polls?page=${p}&size=${size}`;
 
       // 1) Date filter -> overlapped
       if (hasDateRange) {
-        const fromIso = encodeURIComponent(toIsoSeconds(applied.from));
-        const toIso = encodeURIComponent(toIsoSeconds(applied.to));
+        const fromIso = encodeURIComponent(toIsoSeconds(from));
+        const toIso = encodeURIComponent(toIsoSeconds(to));
         path = `/api/polls/overlapped?from=${fromIso}&to=${toIso}&page=${p}&size=${size}`;
       }
       // 2) Search
-      else if (hasQuery && applied.searchMode === "title") {
-        path = `/api/polls/search?title=${encodeURIComponent(applied.query.trim())}&page=${p}&size=${size}`;
-      } else if (hasQuery && applied.searchMode === "author") {
-        path = `/api/polls/search?author=${encodeURIComponent(applied.query.trim())}&page=${p}&size=${size}`;
+      else if (hasQuery && searchMode === "title") {
+        path = `/api/polls/search?title=${encodeURIComponent(
+          debouncedQuery.trim()
+        )}&page=${p}&size=${size}`;
+      } else if (hasQuery && searchMode === "author") {
+        path = `/api/polls/search?author=${encodeURIComponent(
+          debouncedQuery.trim()
+        )}&page=${p}&size=${size}`;
       }
       // 3) Status filter
-      else if (applied.status === "open") {
+      else if (status === "open") {
         path = `/api/polls/status/OPEN?page=${p}&size=${size}`;
-      } else if (applied.status === "closed") {
+      } else if (status === "closed") {
         path = `/api/polls/status/CLOSED?page=${p}&size=${size}`;
-      } else if (applied.status === "draft") {
+      } else if (status === "draft") {
         path = `/api/polls/status/DRAFT?page=${p}&size=${size}`;
       }
 
-      const res = await api<PageLike<PollResponse>>(path, { method: "GET", auth: true });
+      const res = await api<PageLike<PollResponse>>(path, {
+        method: "GET",
+        auth: true,
+      });
       setData(res.content || []);
       setMeta({
         page: res.number ?? 0,
         totalPages: res.totalPages,
-        hasNext: res.hasNext ?? (res.last === false),
+        hasNext: res.hasNext ?? res.last === false,
       });
     } catch (e: any) {
       setError(e?.message || "Erreur lors du chargement.");
@@ -166,12 +186,7 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchPolls();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applied, page]);
-
-  function applyFilters() {
-    setPage(0);
-    setApplied({ status, searchMode, query, from, to });
-  }
+  }, [status, searchMode, debouncedQuery, from, to, page]);
 
   function resetFilters() {
     setStatus("all");
@@ -180,7 +195,6 @@ export default function DashboardPage() {
     setFrom("");
     setTo("");
     setPage(0);
-    setApplied({ status: "all", searchMode: "title", query: "", from: "", to: "" });
   }
 
   const pillBase =
@@ -195,10 +209,14 @@ export default function DashboardPage() {
     "cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
   const btnGhost =
     "cursor-pointer inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
-  
+
   const totalPages = meta.totalPages ?? 1;
   const canPrev = page > 0;
-  const canNext = meta.totalPages !== undefined ? page < totalPages - 1 : !!meta.hasNext;
+  const canNext =
+    meta.totalPages !== undefined ? page < totalPages - 1 : !!meta.hasNext;
+
+  const showPagination =
+    !loading && filtered.length > 0 && (meta.totalPages ?? 1) > 1;
 
   return (
     <AuthGuard>
@@ -209,9 +227,12 @@ export default function DashboardPage() {
             <div className="text-center md:text-left text-2xl font-semibold uppercase tracking-[0.14em] text-zinc-600 uppercase">
               all polls
             </div>
-            <Link href="/create" className={btnPrimary + "text-medium uppercase"}>
-            <Plus className="mr-2 h-4 w-4" />
-            create poll
+            <Link
+              href="/create"
+              className={btnPrimary + " text-medium uppercase"}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              create poll
             </Link>
           </div>
 
@@ -241,8 +262,15 @@ export default function DashboardPage() {
                   ).map(([key, label]) => (
                     <button
                       key={key}
-                      onClick={() => setStatus(key)}
-                      className={[pillBase, status === key ? pillActive : pillIdle].join(" ")}
+                      onClick={() => {
+                        setStatus(key);
+                        setPage(0);
+                      }}
+                      className={
+                        [pillBase, status === key ? pillActive : pillIdle].join(
+                          " "
+                        ) + " cursor-pointer"
+                      }
                       type="button"
                     >
                       {label}
@@ -258,8 +286,15 @@ export default function DashboardPage() {
                     <Search className="h-4 w-4 text-zinc-500" />
                     <input
                       value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder={searchMode === "title" ? "Search by title.." : "Search by author.."}
+                      onChange={(e) => {
+                        setQuery(e.target.value);
+                        setPage(0);
+                      }}
+                      placeholder={
+                        searchMode === "title"
+                          ? "Search by title.."
+                          : "Search by author.."
+                      }
                       className="h-10 w-full bg-transparent text-sm text-zinc-900 pl-3 outline-none placeholder:text-zinc-500"
                     />
                   </div>
@@ -268,7 +303,10 @@ export default function DashboardPage() {
                 <div className="md:col-span-2">
                   <select
                     value={searchMode}
-                    onChange={(e) => setSearchMode(e.target.value as SearchMode)}
+                    onChange={(e) => {
+                      setSearchMode(e.target.value as SearchMode);
+                      setPage(0);
+                    }}
                     className={inputBase}
                   >
                     <option value="title">Title</option>
@@ -289,25 +327,32 @@ export default function DashboardPage() {
                     <input
                       type="datetime-local"
                       value={from}
-                      onChange={(e) => setFrom(e.target.value)}
+                      onChange={(e) => {
+                        setFrom(e.target.value);
+                        setPage(0);
+                      }}
                       className={inputBase}
                     />
                     <input
                       type="datetime-local"
                       value={to}
-                      onChange={(e) => setTo(e.target.value)}
+                      onChange={(e) => {
+                        setFrom(e.target.value);
+                        setPage(0);
+                      }}
                       className={inputBase}
                     />
                   </div>
 
-                  <div className="flex gap-2">
-                    <button onClick={applyFilters} className={btnPrimary + "text-sm"} type="button">
-                      Apply
-                    </button>
-                    <button onClick={resetFilters} className={btnGhost} type="button">
-                      Reset
-                    </button>
-                  </div>
+                  <button
+                    onClick={resetFilters}
+                    className="cursor-pointer inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60"
+                    type="button"
+                    disabled={loading}
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                    Reset
+                  </button>
                 </div>
               </div>
 
@@ -327,43 +372,47 @@ export default function DashboardPage() {
           </section>
 
           {/* Pagination */}
-          {(meta.totalPages ?? 1) > 1 && (
+
+          {/* Pagination */}
+          {showPagination && (
             <div className="flex items-center justify-between">
               <div className="flex items-center justify-center md:justify-end">
                 <span className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-800">
                   {loading ? "Loading.." : `${filtered.length} displayed`}
-                  {meta.totalPages !== undefined ? ` · ${meta.totalPages} ${
-                    meta.totalPages > 1 ? "pages" : "page"
-                  }` : ""}
+                  {meta.totalPages !== undefined
+                    ? ` · ${meta.totalPages} ${
+                        meta.totalPages > 1 ? "pages" : "page"
+                      }`
+                    : ""}
                 </span>
               </div>
-              
+
               <div className="inline-flex items-center rounded-xl border border-zinc-200 bg-white shadow-sm">
                 <button
-                type="button"
-                onClick={() => setPage((x) => Math.max(0, x - 1))}
-                disabled={!canPrev || loading}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-l-xl hover:bg-zinc-50 disabled:opacity-40"
-                aria-label="Previous page"
-                title="Previous page"
+                  type="button"
+                  onClick={() => setPage((x) => Math.max(0, x - 1))}
+                  disabled={!canPrev || loading}
+                  className="cursor-pointer inline-flex h-10 w-10 items-center justify-center rounded-l-xl hover:bg-zinc-50 disabled:opacity-40 disabled:pointer-events-none disabled:cursor-default"
+                  aria-label="Previous page"
+                  title="Previous page"
                 >
                   <ChevronLeft className="h-5 w-5 text-zinc-700" />
                 </button>
-                
+
                 <div className="px-3 text-xs font-semibold text-zinc-700">
                   Page {page + 1} / {totalPages}
                 </div>
-                
+
                 <button
-                type="button"
-                onClick={() => setPage((x) => x + 1)}
-                disabled={!canNext || loading}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-r-xl hover:bg-zinc-50 disabled:opacity-40"
-                aria-label="Next page"
-                title="Next page"
+                  type="button"
+                  onClick={() => setPage((x) => x + 1)}
+                  disabled={!canNext || loading}
+                  className="cursor-pointer inline-flex h-10 w-10 items-center justify-center rounded-r-xl hover:bg-zinc-50 disabled:opacity-40 disabled:pointer-events-none disabled:cursor-default"
+                  aria-label="Next page"
+                  title="Next page"
                 >
                   <ChevronRight className="h-5 w-5 text-zinc-700" />
-                  </button>
+                </button>
               </div>
             </div>
           )}
@@ -371,7 +420,7 @@ export default function DashboardPage() {
           {/* List */}
           <section className="grid gap-4 md:grid-cols-2">
             {!loading && filtered.length === 0 && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+              <div className="col-span-2 rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
                 No poll found.
               </div>
             )}
@@ -400,7 +449,7 @@ export default function DashboardPage() {
                         </p>
                       )}
 
-                      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-500">
+                      <div className="mt-3 flex flex-col gap-x-4 gap-y-1 text-sm text-zinc-500">
                         <span>Opening: {formatDate(p.dateStart)}</span>
                         <span>Closing: {formatDate(p.dateEnd)}</span>
                       </div>
@@ -408,23 +457,27 @@ export default function DashboardPage() {
 
                     <div className="flex items-center gap-2">
                       <Link
-                      href={`/poll/${p.id}`}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
-                      aria-label="See details"
-                      title="See details"
+                        href={`/poll/${p.id}`}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                        aria-label="See details"
+                        title="See details"
                       >
                         <Eye className="h-5 w-5 text-zinc-600" />
                       </Link>
-                      
+
                       <button
-                      type="button"
-                      onClick={() => setFavorites(toggleFavorite(p.id))}
-                      className="cursor-pointer inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
-                      aria-label="Favorite"
-                      title="Favorite"
+                        type="button"
+                        onClick={() => setFavorites(toggleFavorite(p.id))}
+                        className="cursor-pointer inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                        aria-label="Favorite"
+                        title="Favorite"
                       >
                         <Star
-                        className={`h-5 w-5 ${fav ? "fill-zinc-950 text-zinc-950" : "text-zinc-500"}`}
+                          className={`h-5 w-5 ${
+                            fav
+                              ? "fill-zinc-950 text-zinc-950"
+                              : "text-zinc-500"
+                          }`}
                         />
                       </button>
                     </div>
@@ -433,10 +486,16 @@ export default function DashboardPage() {
                   <div className="mt-4 flex flex-wrap gap-2">
                     {st === "OPEN" && (
                       <>
-                        <Link href={`/poll/${p.id}`} className={btnPrimary}>
+                        <Link
+                          href={`/poll/${p.id}`}
+                          className={btnPrimary + " text-sm"}
+                        >
                           Participate
                         </Link>
-                        <Link href={`/poll/${p.id}/progress`} className={btnGhost}>
+                        <Link
+                          href={`/poll/${p.id}/progress`}
+                          className={btnGhost}
+                        >
                           See progress
                         </Link>
                         <button
@@ -453,8 +512,11 @@ export default function DashboardPage() {
                     )}
 
                     {st === "CLOSED" && (
-                      <Link href={`/poll/${p.id}/results`} className={btnPrimary}>
-                        See reults
+                      <Link
+                        href={`/poll/${p.id}/results`}
+                        className={btnPrimary + " text-sm"}
+                      >
+                        See results
                       </Link>
                     )}
 
