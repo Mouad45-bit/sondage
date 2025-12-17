@@ -339,7 +339,7 @@ export default function PollProgressPage() {
                         ? `${stats.totalVotes} ${
                             stats.totalVotes > 1 ? "votes" : "vote"
                           }`
-                        : "0 vote"}
+                        : "no data available"}
                     </div>
                   </div>
                 </div>
