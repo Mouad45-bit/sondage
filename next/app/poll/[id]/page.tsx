@@ -8,7 +8,12 @@ import { api } from "../../lib/api";
 import { getUidFromToken } from "../../lib/jwt";
 import { addReminder } from "../../lib/reminders";
 import { getFavorites, toggleFavorite } from "../../lib/favorites";
-import { ArrowLeft, CheckCircle2, Star } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Star,
+  Trash2,
+} from "lucide-react";
 
 type PollStatus = "DRAFT" | "OPEN" | "CLOSED";
 
@@ -35,9 +40,7 @@ function StatusBadge({ status }: { status: string }) {
     "h-6 inline-flex items-center rounded-full border px-2 py-0.5 text-sm font-semibold tracking-wide";
   if (s === "OPEN")
     return (
-      <span
-        className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}
-      >
+      <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>
         OPEN
       </span>
     );
@@ -72,10 +75,7 @@ export default function PollDetailPage() {
   const isFav = useMemo(() => favorites.includes(id), [favorites, id]);
 
   const uid = useMemo(() => getUidFromToken(), []);
-  const isOwner = useMemo(
-    () => (poll ? uid === poll.authorId : false),
-    [poll, uid]
-  );
+  const isOwner = useMemo(() => (poll ? uid === poll.authorId : false), [poll, uid]);
 
   // vote
   const [selected, setSelected] = useState<number | null>(null);
@@ -83,28 +83,37 @@ export default function PollDetailPage() {
   const [voteMsg, setVoteMsg] = useState<string | null>(null);
   const [hasVotedLocal, setHasVotedLocal] = useState(false);
 
+  // cancel (owner draft)
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
   // ----- styles (mêmes que Dashboard) -----
   const btnPrimary =
     "cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-base font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
   const btnGhost =
     "cursor-pointer inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
+  const btnDanger =
+    "cursor-pointer inline-flex items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:opacity-60";
 
   useEffect(() => {
     setFavorites(getFavorites());
   }, []);
 
   useEffect(() => {
+    let t: any;
+    if (toast) t = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  useEffect(() => {
     async function load() {
       setLoading(true);
       setError(null);
       try {
-        const data = await api<PollResponse>(
-          `/api/polls/${encodeURIComponent(id)}`,
-          {
-            method: "GET",
-            auth: false,
-          }
-        );
+        const data = await api<PollResponse>(`/api/polls/${encodeURIComponent(id)}`, {
+          method: "GET",
+          auth: false,
+        });
         setPoll(data);
       } catch (e: any) {
         setError(e?.message || "Impossible de charger ce sondage.");
@@ -130,9 +139,12 @@ export default function PollDetailPage() {
 
     setVoteLoading(true);
     try {
+      // ⚠️ garde ton appel tel quel si ton api.ts gère "json"
+      // sinon remplace par: body: { optionIndex: selected }
       await api(`/api/polls/${encodeURIComponent(poll.id)}/votes`, {
         method: "POST",
         auth: true,
+        // @ts-ignore
         json: { optionIndex: selected },
       });
 
@@ -142,6 +154,37 @@ export default function PollDetailPage() {
       setVoteMsg(e?.message || "Vote impossible.");
     } finally {
       setVoteLoading(false);
+    }
+  }
+
+  async function cancelDraftPoll() {
+    if (!poll) return;
+
+    if (!uid) {
+      requireLogin(router, `/poll/${poll.id}`);
+      return;
+    }
+
+    const ok = window.confirm(
+      `Cancel this DRAFT poll?\n\n"${poll.title}"\n\nThis will permanently delete it.`
+    );
+    if (!ok) return;
+
+    setCancelLoading(true);
+    setError(null);
+
+    try {
+      await api<void>(`/api/polls/${encodeURIComponent(poll.id)}`, {
+        method: "DELETE",
+        auth: true,
+      });
+
+      setToast("Poll cancelled (deleted).");
+      router.push("/polls");
+    } catch (e: any) {
+      setError(e?.message || "Erreur lors de la suppression.");
+    } finally {
+      setCancelLoading(false);
     }
   }
 
@@ -188,7 +231,6 @@ export default function PollDetailPage() {
   }
 
   const st = String(poll.status).toUpperCase();
-
   const canVoteInline = st === "OPEN" && !isOwner;
 
   return (
@@ -207,8 +249,14 @@ export default function PollDetailPage() {
             poll details
           </div>
 
-          <div className="flex md:flex-1 md:justify-end"></div>
+          <div className="flex md:flex-1 md:justify-end" />
         </div>
+
+        {toast && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            {toast}
+          </div>
+        )}
 
         {/* Details card */}
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -223,6 +271,7 @@ export default function PollDetailPage() {
                 className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
                 aria-label="Favori"
                 title="Favori"
+                type="button"
               >
                 <Star
                   className={`h-5 w-5 ${
@@ -233,9 +282,7 @@ export default function PollDetailPage() {
             </div>
           </div>
 
-          <p className="mb-3 text-lg text-zinc-600">
-            {poll.description || "—"}
-          </p>
+          <p className="mb-3 text-lg text-zinc-600">{poll.description || "—"}</p>
 
           <div className="grid gap-4 md:grid-cols-2">
             {/* Dates */}
@@ -273,7 +320,6 @@ export default function PollDetailPage() {
                   </p>
                 </div>
 
-                {/* Badge vote fait (uniquement quand vote inline) */}
                 {canVoteInline && hasVotedLocal && (
                   <div className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
                     <CheckCircle2 className="h-4 w-4" />
@@ -282,7 +328,6 @@ export default function PollDetailPage() {
                 )}
               </div>
 
-              {/* === OPEN + non-owner => options = zone de vote === */}
               {canVoteInline ? (
                 <>
                   <div className="mt-4 space-y-2">
@@ -332,13 +377,13 @@ export default function PollDetailPage() {
                       onClick={submitVote}
                       disabled={voteLoading}
                       className={btnPrimary}
+                      type="button"
                     >
                       {voteLoading ? "Sending.." : "Vote"}
                     </button>
                   </div>
                 </>
               ) : (
-                /* === sinon: affichage simple (DRAFT/CLOSED ou owner) === */
                 <ul className="mt-3 space-y-2">
                   {poll.options.map((opt, i) => (
                     <li
@@ -358,9 +403,7 @@ export default function PollDetailPage() {
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div className="mb-3">
             <h2 className="text-xl font-semibold text-zinc-950">Actions</h2>
-            <p className="mt-1 text-base text-zinc-600">
-              {isOwner ? "Owner" : "Visitor"}
-            </p>
+            <p className="mt-1 text-base text-zinc-600">{isOwner ? "Owner" : "Visitor"}</p>
           </div>
 
           {/* Owner */}
@@ -371,15 +414,30 @@ export default function PollDetailPage() {
                   See progress
                 </Link>
               )}
+
               {st === "CLOSED" && (
                 <Link href={`/poll/${poll.id}/results`} className={btnPrimary}>
                   See results
                 </Link>
               )}
+
               {st === "DRAFT" && (
-                <Link href={`/poll/${poll.id}/update`} className={btnPrimary}>
-                  Update poll
-                </Link>
+                <>
+                  <Link href={`/poll/${poll.id}/update`} className={btnPrimary}>
+                    Update poll
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={cancelDraftPoll}
+                    disabled={cancelLoading}
+                    className={btnDanger}
+                    title="Cancel poll (delete)"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {cancelLoading ? "Cancelling.." : "Cancel poll"}
+                  </button>
+                </>
               )}
             </div>
           )}
@@ -389,27 +447,22 @@ export default function PollDetailPage() {
             <div className="space-y-4">
               {st === "OPEN" && (
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-                  <div className="text-sm font-semibold text-zinc-900">
-                    Opened poll
-                  </div>
+                  <div className="text-sm font-semibold text-zinc-900">Opened poll</div>
                   <p className="mt-1 text-sm text-zinc-600">
                     You can consult the progress or set a reminder to be notified when it's closed.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Link
-                      href={`/poll/${poll.id}/progress`}
-                      className={btnGhost}
-                    >
+                    <Link href={`/poll/${poll.id}/progress`} className={btnGhost}>
                       See progress
                     </Link>
                     <button
                       onClick={() => {
-                        if (!uid)
-                          return requireLogin(router, `/poll/${poll.id}`);
+                        if (!uid) return requireLogin(router, `/poll/${poll.id}`);
                         addReminder(poll.id, "RESULTS", poll.dateEnd);
                         setVoteMsg("Results reminder set (local).");
                       }}
                       className={btnGhost}
+                      type="button"
                     >
                       Fix results reminder
                     </button>
@@ -419,18 +472,12 @@ export default function PollDetailPage() {
 
               {st === "CLOSED" && (
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-                  <div className="text-sm font-semibold text-zinc-900">
-                    Closed poll
-                  </div>
+                  <div className="text-sm font-semibold text-zinc-900">Closed poll</div>
                   <p className="mt-1 text-sm text-zinc-600">
                     You can only consult the results.
                   </p>
-
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Link
-                      href={`/poll/${poll.id}/results`}
-                      className={btnPrimary}
-                    >
+                    <Link href={`/poll/${poll.id}/results`} className={btnPrimary}>
                       See results
                     </Link>
                   </div>
@@ -439,13 +486,10 @@ export default function PollDetailPage() {
 
               {st === "DRAFT" && (
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-                  <div className="text-sm font-semibold text-zinc-900">
-                    Draft poll
-                  </div>
+                  <div className="text-sm font-semibold text-zinc-900">Draft poll</div>
                   <p className="mt-1 text-sm text-zinc-600">
                     You can set a reminder to be notified when it's opened.
                   </p>
-
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       onClick={() => {
@@ -453,6 +497,7 @@ export default function PollDetailPage() {
                         setVoteMsg("Opening reminder set (local).");
                       }}
                       className={btnGhost}
+                      type="button"
                     >
                       Set opening reminder
                     </button>
