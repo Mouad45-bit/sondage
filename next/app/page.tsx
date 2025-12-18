@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AuthGuard } from "./components/AuthGuard";
 import { api } from "./lib/api";
+import { getUidFromToken } from "./lib/jwt";
 import { getFavorites, toggleFavorite } from "./lib/favorites";
 import { addReminder } from "./lib/reminders";
 import {
@@ -47,6 +48,10 @@ type SearchMode = "title" | "author";
 
 const PAGE_SIZE = 6;
 
+// ✅ taille de fetch en mode "ALL" (pagination locale)
+// augmente si tu as beaucoup de polls
+const MERGE_FETCH_SIZE = 200;
+
 function toIsoSeconds(datetimeLocal: string) {
   if (!datetimeLocal) return "";
   return datetimeLocal.length === 16 ? `${datetimeLocal}:00` : datetimeLocal;
@@ -64,9 +69,7 @@ function StatusBadge({ status }: { status: string }) {
     "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-wide";
   if (s === "OPEN")
     return (
-      <span
-        className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}
-      >
+      <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>
         OPEN
       </span>
     );
@@ -84,7 +87,9 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function DashboardPage() {
-  // UI state (editable)
+  const uid = useMemo(() => getUidFromToken(), []);
+
+  // UI state
   const [status, setStatus] = useState<StatusFilter>("all");
   const [searchMode, setSearchMode] = useState<SearchMode>("title");
   const [query, setQuery] = useState("");
@@ -93,14 +98,15 @@ export default function DashboardPage() {
   const [page, setPage] = useState(0);
 
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [data, setData] = useState<PollResponse[]>([]);
+  const [data, setData] = useState<PollResponse[]>([]); // utilisé pour open/closed/draft/search/date
+  const [mergedAll, setMergedAll] = useState<PollResponse[]>([]); // utilisé pour all/favorites (pagination locale)
+
   const [meta, setMeta] = useState<{
     page: number;
     totalPages?: number;
     hasNext?: boolean;
-  }>({
-    page: 0,
-  });
+  }>({ page: 0 });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -122,53 +128,124 @@ export default function DashboardPage() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const filtered = useMemo(() => {
-    if (status !== "favorites") return data;
-    return data.filter((p) => favorites.includes(p.id));
-  }, [data, status, favorites]);
+  const hasDateRange = !!from && !!to;
+  const hasQuery = debouncedQuery.trim().length > 0;
+
+  // ✅ on active pagination LOCALE uniquement quand:
+  // - pas de date range
+  // - pas de query
+  // - status = all ou favorites
+  const isMergedMode = !hasDateRange && !hasQuery && (status === "all" || status === "favorites");
+
+  // ✅ applique la règle HOME: ne pas afficher les polls owner
+  function filterNonOwned(items: PollResponse[]) {
+    return uid ? items.filter((p) => p.authorId !== uid) : items;
+  }
+
+  function applyFavoritesIfNeeded(items: PollResponse[]) {
+    if (status !== "favorites") return items;
+    const favSet = new Set(favorites);
+    return items.filter((p) => favSet.has(p.id));
+  }
+
+  function sortDefault(items: PollResponse[]) {
+    return [...items].sort(
+      (a, b) => new Date(b.dateStart).getTime() - new Date(a.dateStart).getTime()
+    );
+  }
+
+  // ✅ visible list (source = mergedAll ou data)
+  const visibleAll = useMemo(() => {
+    const base = isMergedMode ? mergedAll : data;
+
+    // home rule
+    let out = filterNonOwned(base);
+
+    // favorites filter
+    out = applyFavoritesIfNeeded(out);
+
+    // tri
+    out = sortDefault(out);
+
+    return out;
+  }, [isMergedMode, mergedAll, data, uid, status, favorites]);
+
+  // ✅ pagination finale : LOCALE si mergedMode sinon on affiche direct (backend page)
+  const displayed = useMemo(() => {
+    if (!isMergedMode) return visibleAll;
+    const start = page * PAGE_SIZE;
+    return visibleAll.slice(start, start + PAGE_SIZE);
+  }, [isMergedMode, visibleAll, page]);
+
+  const localHasNext = isMergedMode ? visibleAll.length > (page + 1) * PAGE_SIZE : undefined;
 
   async function fetchPolls() {
     setLoading(true);
     setError(null);
 
     try {
-      const size = PAGE_SIZE;
+      // ✅ MODE MERGE (All / Favorites sans recherche/date) => fetch gros lot, pagination locale
+      if (isMergedMode) {
+        const [openRes, closedRes, draftRes] = await Promise.all([
+          api<PageLike<PollResponse>>(`/api/polls/status/OPEN?page=0&size=${MERGE_FETCH_SIZE}`, {
+            method: "GET",
+            auth: true,
+          }),
+          api<PageLike<PollResponse>>(`/api/polls/status/CLOSED?page=0&size=${MERGE_FETCH_SIZE}`, {
+            method: "GET",
+            auth: true,
+          }),
+          api<PageLike<PollResponse>>(`/api/polls/status/DRAFT?page=0&size=${MERGE_FETCH_SIZE}`, {
+            method: "GET",
+            auth: true,
+          }),
+        ]);
+
+        const merged = [
+          ...(openRes.content || []),
+          ...(closedRes.content || []),
+          ...(draftRes.content || []),
+        ];
+
+        // dedupe by id
+        const map = new Map<string, PollResponse>();
+        for (const poll of merged) map.set(poll.id, poll);
+
+        setMergedAll(Array.from(map.values()));
+
+        // pagination meta locale
+        setMeta({
+          page,
+          totalPages: undefined,
+          hasNext: undefined,
+        });
+
+        return;
+      }
+
+      // ✅ MODE NORMAL (backend pagination)
       const p = page;
 
-      const hasDateRange = !!from && !!to;
-      const hasQuery = debouncedQuery.trim().length > 0;
+      let path = `/api/polls?page=${p}&size=${PAGE_SIZE}`;
 
-      let path = `/api/polls?page=${p}&size=${size}`;
-
-      // 1) Date filter -> overlapped
       if (hasDateRange) {
         const fromIso = encodeURIComponent(toIsoSeconds(from));
         const toIso = encodeURIComponent(toIsoSeconds(to));
-        path = `/api/polls/overlapped?from=${fromIso}&to=${toIso}&page=${p}&size=${size}`;
-      }
-      // 2) Search
-      else if (hasQuery && searchMode === "title") {
-        path = `/api/polls/search?title=${encodeURIComponent(
-          debouncedQuery.trim()
-        )}&page=${p}&size=${size}`;
+        path = `/api/polls/overlapped?from=${fromIso}&to=${toIso}&page=${p}&size=${PAGE_SIZE}`;
+      } else if (hasQuery && searchMode === "title") {
+        path = `/api/polls/search?title=${encodeURIComponent(debouncedQuery.trim())}&page=${p}&size=${PAGE_SIZE}`;
       } else if (hasQuery && searchMode === "author") {
-        path = `/api/polls/search?author=${encodeURIComponent(
-          debouncedQuery.trim()
-        )}&page=${p}&size=${size}`;
-      }
-      // 3) Status filter
-      else if (status === "open") {
-        path = `/api/polls/status/OPEN?page=${p}&size=${size}`;
+        path = `/api/polls/search?author=${encodeURIComponent(debouncedQuery.trim())}&page=${p}&size=${PAGE_SIZE}`;
+      } else if (status === "open") {
+        path = `/api/polls/status/OPEN?page=${p}&size=${PAGE_SIZE}`;
       } else if (status === "closed") {
-        path = `/api/polls/status/CLOSED?page=${p}&size=${size}`;
+        path = `/api/polls/status/CLOSED?page=${p}&size=${PAGE_SIZE}`;
       } else if (status === "draft") {
-        path = `/api/polls/status/DRAFT?page=${p}&size=${size}`;
+        path = `/api/polls/status/DRAFT?page=${p}&size=${PAGE_SIZE}`;
       }
 
-      const res = await api<PageLike<PollResponse>>(path, {
-        method: "GET",
-        auth: true,
-      });
+      const res = await api<PageLike<PollResponse>>(path, { method: "GET", auth: true });
+
       setData(res.content || []);
       setMeta({
         page: res.number ?? 0,
@@ -178,6 +255,7 @@ export default function DashboardPage() {
     } catch (e: any) {
       setError(e?.message || "Erreur lors du chargement.");
       setData([]);
+      setMergedAll([]);
     } finally {
       setLoading(false);
     }
@@ -187,6 +265,12 @@ export default function DashboardPage() {
     fetchPolls();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, searchMode, debouncedQuery, from, to, page]);
+
+  // ✅ quand on change de mode (all/fav <-> autres), reset page pour éviter un slice vide
+  useEffect(() => {
+    setPage(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMergedMode]);
 
   function resetFilters() {
     setStatus("all");
@@ -210,13 +294,18 @@ export default function DashboardPage() {
   const btnGhost =
     "cursor-pointer inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
 
-  const totalPages = meta.totalPages ?? 1;
   const canPrev = page > 0;
-  const canNext =
-    meta.totalPages !== undefined ? page < totalPages - 1 : !!meta.hasNext;
+
+  const canNext = isMergedMode
+    ? !!localHasNext
+    : meta.totalPages !== undefined
+    ? page < (meta.totalPages ?? 1) - 1
+    : !!meta.hasNext;
 
   const showPagination =
-    !loading && filtered.length > 0 && (meta.totalPages ?? 1) > 1;
+    !loading &&
+    displayed.length > 0 &&
+    (isMergedMode ? page > 0 || !!localHasNext : (meta.totalPages ?? 1) > 1 || !!meta.hasNext);
 
   return (
     <AuthGuard>
@@ -224,13 +313,10 @@ export default function DashboardPage() {
         <main className="mx-auto max-w-6xl px-4 py-2 space-y-4">
           {/* Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="text-center md:text-left text-2xl font-semibold uppercase tracking-[0.14em] text-zinc-600 uppercase">
-              all polls
+            <div className="text-center md:text-left text-2xl font-semibold uppercase tracking-[0.14em] text-zinc-600">
+              home
             </div>
-            <Link
-              href="/create"
-              className={btnPrimary + " text-medium uppercase"}
-            >
+            <Link href="/create" className={btnPrimary + " text-medium uppercase"}>
               <Plus className="mr-2 h-4 w-4" />
               create poll
             </Link>
@@ -267,9 +353,8 @@ export default function DashboardPage() {
                         setPage(0);
                       }}
                       className={
-                        [pillBase, status === key ? pillActive : pillIdle].join(
-                          " "
-                        ) + " cursor-pointer"
+                        [pillBase, status === key ? pillActive : pillIdle].join(" ") +
+                        " cursor-pointer"
                       }
                       type="button"
                     >
@@ -290,11 +375,7 @@ export default function DashboardPage() {
                         setQuery(e.target.value);
                         setPage(0);
                       }}
-                      placeholder={
-                        searchMode === "title"
-                          ? "Search by title.."
-                          : "Search by author.."
-                      }
+                      placeholder={searchMode === "title" ? "Search by title.." : "Search by author.."}
                       className="h-10 w-full bg-transparent text-sm text-zinc-900 pl-3 outline-none placeholder:text-zinc-500"
                     />
                   </div>
@@ -337,7 +418,7 @@ export default function DashboardPage() {
                       type="datetime-local"
                       value={to}
                       onChange={(e) => {
-                        setFrom(e.target.value);
+                        setTo(e.target.value);
                         setPage(0);
                       }}
                       className={inputBase}
@@ -356,7 +437,6 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Toast / Error */}
               {toast && (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
                   {toast}
@@ -372,18 +452,14 @@ export default function DashboardPage() {
           </section>
 
           {/* Pagination */}
-
-          {/* Pagination */}
           {showPagination && (
             <div className="flex items-center justify-between">
               <div className="flex items-center justify-center md:justify-end">
                 <span className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-800">
-                  {loading ? "Loading.." : `${filtered.length} displayed`}
-                  {meta.totalPages !== undefined
-                    ? ` · ${meta.totalPages} ${
-                        meta.totalPages > 1 ? "pages" : "page"
-                      }`
-                    : ""}
+                  {loading ? "Loading.." : `${displayed.length} displayed`}
+                  {isMergedMode ? (localHasNext ? " · more pages" : "") : meta.totalPages !== undefined
+                    ? ` · ${meta.totalPages} ${meta.totalPages > 1 ? "pages" : "page"}`
+                    : meta.hasNext ? " · more pages" : ""}
                 </span>
               </div>
 
@@ -400,7 +476,7 @@ export default function DashboardPage() {
                 </button>
 
                 <div className="px-3 text-xs font-semibold text-zinc-700">
-                  Page {page + 1} / {totalPages}
+                  Page {page + 1}
                 </div>
 
                 <button
@@ -419,13 +495,13 @@ export default function DashboardPage() {
 
           {/* List */}
           <section className="grid gap-4 md:grid-cols-2">
-            {!loading && filtered.length === 0 && (
+            {!loading && displayed.length === 0 && (
               <div className="col-span-2 rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
                 No poll found.
               </div>
             )}
 
-            {filtered.map((p) => {
+            {displayed.map((p) => {
               const fav = favorites.includes(p.id);
               const st = String(p.status).toUpperCase();
 
@@ -474,9 +550,7 @@ export default function DashboardPage() {
                       >
                         <Star
                           className={`h-5 w-5 ${
-                            fav
-                              ? "fill-zinc-950 text-zinc-950"
-                              : "text-zinc-500"
+                            fav ? "fill-zinc-950 text-zinc-950" : "text-zinc-500"
                           }`}
                         />
                       </button>
@@ -486,16 +560,10 @@ export default function DashboardPage() {
                   <div className="mt-4 flex flex-wrap gap-2">
                     {st === "OPEN" && (
                       <>
-                        <Link
-                          href={`/poll/${p.id}`}
-                          className={btnPrimary + " text-sm"}
-                        >
+                        <Link href={`/poll/${p.id}`} className={btnPrimary + " text-sm"}>
                           Participate
                         </Link>
-                        <Link
-                          href={`/poll/${p.id}/progress`}
-                          className={btnGhost}
-                        >
+                        <Link href={`/poll/${p.id}/progress`} className={btnGhost}>
                           See progress
                         </Link>
                         <button
@@ -512,10 +580,7 @@ export default function DashboardPage() {
                     )}
 
                     {st === "CLOSED" && (
-                      <Link
-                        href={`/poll/${p.id}/results`}
-                        className={btnPrimary + " text-sm"}
-                      >
+                      <Link href={`/poll/${p.id}/results`} className={btnPrimary + " text-sm"}>
                         See results
                       </Link>
                     )}
