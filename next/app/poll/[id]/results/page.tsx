@@ -251,14 +251,6 @@ export default function PollResultsPage() {
                     </div>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => router.replace(`/poll/${id}/progress`)}
-                  className={btnPrimary}
-                >
-                  See progress page
-                </button>
               </div>
 
               {!stats ? (
