@@ -8,12 +8,7 @@ import { api } from "../../lib/api";
 import { getUidFromToken } from "../../lib/jwt";
 import { addReminder } from "../../lib/reminders";
 import { getFavorites, toggleFavorite } from "../../lib/favorites";
-import {
-  ArrowLeft,
-  CheckCircle2,
-  Star,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2, Star, Trash2 } from "lucide-react";
 
 type PollStatus = "DRAFT" | "OPEN" | "CLOSED";
 
@@ -40,7 +35,9 @@ function StatusBadge({ status }: { status: string }) {
     "h-6 inline-flex items-center rounded-full border px-2 py-0.5 text-sm font-semibold tracking-wide";
   if (s === "OPEN")
     return (
-      <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>
+      <span
+        className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}
+      >
         OPEN
       </span>
     );
@@ -62,6 +59,44 @@ function requireLogin(router: ReturnType<typeof useRouter>, nextPath: string) {
   router.push(`/auth/login?next=${next}`);
 }
 
+/** ✅ Texte “Actions” selon le statut + type user */
+function getActionCopy(st: string, isOwner: boolean) {
+  const status = st.toUpperCase();
+
+  if (isOwner) {
+    if (status === "OPEN")
+      return {
+        title: "Opened poll",
+        desc: "You can consult the live progress. Results will be available once the poll is closed.",
+      };
+    if (status === "CLOSED")
+      return {
+        title: "Closed poll",
+        desc: "You can consult the final results. This poll is finished and can no longer receive votes.",
+      };
+    return {
+      title: "Draft poll",
+      desc: "You can update this draft before opening. You can also cancel it if you no longer need it.",
+    };
+  }
+
+  // Visitor
+  if (status === "OPEN")
+    return {
+      title: "Opened poll",
+      desc: "You can consult the progress or set a reminder to be notified when it's closed.",
+    };
+  if (status === "CLOSED")
+    return {
+      title: "Closed poll",
+      desc: "You can consult the final results. This poll is finished and can no longer receive votes.",
+    };
+  return {
+    title: "Draft poll",
+    desc: "You can set a reminder to be notified when it's opened.",
+  };
+}
+
 export default function PollDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -75,7 +110,10 @@ export default function PollDetailPage() {
   const isFav = useMemo(() => favorites.includes(id), [favorites, id]);
 
   const uid = useMemo(() => getUidFromToken(), []);
-  const isOwner = useMemo(() => (poll ? uid === poll.authorId : false), [poll, uid]);
+  const isOwner = useMemo(
+    () => (poll ? uid === poll.authorId : false),
+    [poll, uid]
+  );
 
   // vote
   const [selected, setSelected] = useState<number | null>(null);
@@ -110,10 +148,10 @@ export default function PollDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await api<PollResponse>(`/api/polls/${encodeURIComponent(id)}`, {
-          method: "GET",
-          auth: false,
-        });
+        const data = await api<PollResponse>(
+          `/api/polls/${encodeURIComponent(id)}`,
+          { method: "GET", auth: false }
+        );
         setPoll(data);
       } catch (e: any) {
         setError(e?.message || "Impossible de charger ce sondage.");
@@ -139,8 +177,6 @@ export default function PollDetailPage() {
 
     setVoteLoading(true);
     try {
-      // ⚠️ garde ton appel tel quel si ton api.ts gère "json"
-      // sinon remplace par: body: { optionIndex: selected }
       await api(`/api/polls/${encodeURIComponent(poll.id)}/votes`, {
         method: "POST",
         auth: true,
@@ -188,7 +224,11 @@ export default function PollDetailPage() {
     }
   }
 
-  // ----- Loading / Error (même look Dashboard) -----
+  const st = String(poll?.status).toUpperCase();
+  const canVoteInline = st === "OPEN" && !isOwner;
+
+  const actionsCopy = useMemo(() => getActionCopy(st, isOwner), [st, isOwner]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-50">
@@ -202,15 +242,6 @@ export default function PollDetailPage() {
                 <div className="mt-1 text-sm text-zinc-600">Chargement…</div>
               </div>
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
-            </div>
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              <div className="h-20 rounded-2xl bg-zinc-100" />
-              <div className="h-20 rounded-2xl bg-zinc-100" />
-            </div>
-            <div className="mt-4 space-y-2">
-              <div className="h-10 rounded-xl bg-zinc-100" />
-              <div className="h-10 rounded-xl bg-zinc-100" />
-              <div className="h-10 rounded-xl bg-zinc-100" />
             </div>
           </div>
         </main>
@@ -229,9 +260,6 @@ export default function PollDetailPage() {
       </div>
     );
   }
-
-  const st = String(poll.status).toUpperCase();
-  const canVoteInline = st === "OPEN" && !isOwner;
 
   return (
     <div className="min-h-screen bg-zinc-50">
@@ -282,7 +310,9 @@ export default function PollDetailPage() {
             </div>
           </div>
 
-          <p className="mb-3 text-lg text-zinc-600">{poll.description || "—"}</p>
+          <p className="mb-3 text-lg text-zinc-600">
+            {poll.description || "—"}
+          </p>
 
           <div className="grid gap-4 md:grid-cols-2">
             {/* Dates */}
@@ -403,10 +433,20 @@ export default function PollDetailPage() {
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div className="mb-3">
             <h2 className="text-xl font-semibold text-zinc-950">Actions</h2>
-            <p className="mt-1 text-base text-zinc-600">{isOwner ? "Owner" : "Visitor"}</p>
+            <p className="mt-1 text-base text-zinc-600">
+              {isOwner ? "Owner" : "Visitor"}
+            </p>
           </div>
 
-          {/* Owner */}
+          {/* ✅ Description dynamique (owner/visitor + status) */}
+          <div className="mb-4 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
+            <div className="text-sm font-semibold text-zinc-900">
+              {actionsCopy.title}
+            </div>
+            <p className="mt-1 text-sm text-zinc-600">{actionsCopy.desc}</p>
+          </div>
+
+          {/* Owner buttons */}
           {isOwner && (
             <div className="flex flex-wrap gap-2">
               {st === "OPEN" && (
@@ -441,67 +481,46 @@ export default function PollDetailPage() {
             </div>
           )}
 
-          {/* Non-owner */}
+          {/* Visitor buttons */}
           {!isOwner && (
-            <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
               {st === "OPEN" && (
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-                  <div className="text-sm font-semibold text-zinc-900">Opened poll</div>
-                  <p className="mt-1 text-sm text-zinc-600">
-                    You can consult the progress or set a reminder to be notified when it's closed.
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Link href={`/poll/${poll.id}/progress`} className={btnGhost}>
-                      See progress
-                    </Link>
-                    <button
-                      onClick={() => {
-                        if (!uid) return requireLogin(router, `/poll/${poll.id}`);
-                        addReminder(poll.id, "RESULTS", poll.dateEnd);
-                        setVoteMsg("Results reminder set (local).");
-                      }}
-                      className={btnGhost}
-                      type="button"
-                    >
-                      Fix results reminder
-                    </button>
-                  </div>
-                </div>
+                <>
+                  <Link href={`/poll/${poll.id}/progress`} className={btnGhost}>
+                    See progress
+                  </Link>
+
+                  <button
+                    onClick={() => {
+                      if (!uid) return requireLogin(router, `/poll/${poll.id}`);
+                      addReminder(poll.id, "RESULTS", poll.dateEnd);
+                      setVoteMsg("Results reminder set (local).");
+                    }}
+                    className={btnGhost}
+                    type="button"
+                  >
+                    Fix results reminder
+                  </button>
+                </>
               )}
 
               {st === "CLOSED" && (
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-                  <div className="text-sm font-semibold text-zinc-900">Closed poll</div>
-                  <p className="mt-1 text-sm text-zinc-600">
-                    You can only consult the results.
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Link href={`/poll/${poll.id}/results`} className={btnPrimary}>
-                      See results
-                    </Link>
-                  </div>
-                </div>
+                <Link href={`/poll/${poll.id}/results`} className={btnPrimary}>
+                  See results
+                </Link>
               )}
 
               {st === "DRAFT" && (
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
-                  <div className="text-sm font-semibold text-zinc-900">Draft poll</div>
-                  <p className="mt-1 text-sm text-zinc-600">
-                    You can set a reminder to be notified when it's opened.
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      onClick={() => {
-                        addReminder(poll.id, "OPENING", poll.dateStart);
-                        setVoteMsg("Opening reminder set (local).");
-                      }}
-                      className={btnGhost}
-                      type="button"
-                    >
-                      Set opening reminder
-                    </button>
-                  </div>
-                </div>
+                <button
+                  onClick={() => {
+                    addReminder(poll.id, "OPENING", poll.dateStart);
+                    setVoteMsg("Opening reminder set (local).");
+                  }}
+                  className={btnGhost}
+                  type="button"
+                >
+                  Set opening reminder
+                </button>
               )}
             </div>
           )}
