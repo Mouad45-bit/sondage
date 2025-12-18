@@ -40,7 +40,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await api<AuthResponse>("/auth/login", {
+      const res = await api<AuthResponse>("/backend/auth/login", {
         method: "POST",
         auth: false,
         json: { username, password },

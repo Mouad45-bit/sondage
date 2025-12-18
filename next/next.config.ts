@@ -6,6 +6,10 @@ const nextConfig = {
         source: "/api/:path*",
         destination: "http://localhost:8080/api/:path*",
       },
+      {
+        source: "/backend/auth/:path*",
+        destination: "http://localhost:8080/auth/:path*",
+      },
     ];
   },
 };

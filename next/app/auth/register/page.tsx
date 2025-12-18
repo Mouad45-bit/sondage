@@ -46,7 +46,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const res = await api<AuthResponse>("/auth/register", {
+      const res = await api<AuthResponse>("/backend/auth/register", {
         method: "POST",
         auth: false,
         json: { username, password },
