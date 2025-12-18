@@ -1,4 +1,4 @@
-// app/lib/auth.ts
+// app/lib/api.ts
 
 import { getToken, clearToken } from "./auth";
 
@@ -22,36 +22,41 @@ async function readJsonSafe(res: Response) {
   }
 }
 
-export async function api<T>(
-  path: string,
-  options: RequestInit & { json?: any; auth?: boolean } = {}
-): Promise<T> {
-  const { json, auth = true, headers, ...rest } = options;
+export async function api<T>(path: string, opts?: { method?: string; auth?: boolean; body?: any }) {
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
+  const url = baseUrl + path;
 
-  //
-  const finalHeaders = new Headers(headers);
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
 
-  if (json !== undefined) {
-    finalHeaders.set("Content-Type", "application/json");
+  if (opts?.auth) {
+    const token = localStorage.getItem("token");
+    if (token) headers.Authorization = `Bearer ${token}`;
   }
 
-  if (auth) {
-    const token = getToken();
-    if (token) finalHeaders.set("Authorization", `Bearer ${token}`);
-  }
-
-  const res = await fetch(`/backend${path}`, {
-    ...rest,
-    headers: finalHeaders,
-    body: json !== undefined ? JSON.stringify(json) : rest.body,
+  const res = await fetch(url, {
+    method: opts?.method ?? "GET",
+    headers,
+    body: opts?.body ? JSON.stringify(opts.body) : undefined,
   });
 
-  const body = await readJsonSafe(res);
-
   if (!res.ok) {
-    if (res.status === 401) clearToken();
-    throw new ApiError(res.status, body, (body as any)?.message || "Erreur API");
+    // essaie de lire le message backend
+    let msg = "Erreur API";
+    try {
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        const j = await res.json();
+        msg = j?.message || j?.error || JSON.stringify(j);
+      } else {
+        const t = await res.text();
+        if (t) msg = t;
+      }
+    } catch {}
+
+    const err: any = new Error(msg);
+    err.status = res.status;
+    throw err;
   }
 
-  return body as T;
+  return (await res.json()) as T;
 }

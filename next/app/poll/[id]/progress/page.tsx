@@ -82,7 +82,9 @@ function StatusBadge({ status }: { status: string }) {
     "inline-flex items-center rounded-full border px-2 py-0.5 text-sm font-semibold tracking-wide";
   if (s === "OPEN")
     return (
-      <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>
+      <span
+        className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}
+      >
         OPEN
       </span>
     );
@@ -117,7 +119,10 @@ export default function PollProgressPage() {
   // erreur uniquement pour le chargement du poll (vraie erreur)
   const [pollError, setPollError] = useState<string | null>(null);
 
-  const isOwner = useMemo(() => (poll ? uid === poll.authorId : false), [poll, uid]);
+  const isOwner = useMemo(
+    () => (poll ? uid === poll.authorId : false),
+    [poll, uid]
+  );
 
   const btnPrimary =
     "cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
@@ -134,10 +139,13 @@ export default function PollProgressPage() {
 
       try {
         // 1) poll: public
-        const p = await api<PollResponse>(`/api/polls/${encodeURIComponent(id)}`, {
-          method: "GET",
-          auth: false,
-        });
+        const p = await api<PollResponse>(
+          `/api/polls/${encodeURIComponent(id)}`,
+          {
+            method: "GET",
+            auth: false,
+          }
+        );
         setPoll(p);
 
         // 2) progress: protégé (doit être clair si 401/403)
@@ -148,23 +156,22 @@ export default function PollProgressPage() {
           );
           setStats(s);
         } catch (e: any) {
-          const msg = String(e?.message || "");
+          const status = e?.status;
 
-          // ⚠️ ton wrapper api() ne donne pas forcément "status".
-          // on détecte via message (souvent contient 401/403)
-          if (msg.includes("401")) {
+          if (status === 401) {
             setProgressGate("LOGIN");
-            setStats(null);
             setProgressError(null);
-          } else if (msg.includes("403")) {
+          } else if (status === 403) {
             setProgressGate("VOTE");
-            setStats(null);
             setProgressError(null);
           } else {
             setProgressGate(null);
-            setStats(null);
-            setProgressError(e?.message || "Impossible de charger l’avancement.");
+            setProgressError(
+              e?.message || "Impossible de charger l’avancement."
+            );
           }
+
+          setStats(null);
         }
       } catch (e: any) {
         setPoll(null);
@@ -221,7 +228,11 @@ export default function PollProgressPage() {
             <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
               {pollError || "Poll not found."}
             </div>
-            <button onClick={() => router.back()} className={btnGhost} type="button">
+            <button
+              onClick={() => router.back()}
+              className={btnGhost}
+              type="button"
+            >
               Back
             </button>
           </main>
@@ -239,7 +250,11 @@ export default function PollProgressPage() {
           {/* Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
             <div className="flex items-center md:flex-1">
-              <button type="button" onClick={() => router.back()} className={btnGhost}>
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className={btnGhost}
+              >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </button>
@@ -304,16 +319,22 @@ export default function PollProgressPage() {
               </div>
 
               <div className="mt-3 h-2 w-full rounded-full bg-zinc-200/60">
-                <div className="h-2 rounded-full bg-zinc-900" style={{ width: `${timeBar.pct}%` }} />
+                <div
+                  className="h-2 rounded-full bg-zinc-900"
+                  style={{ width: `${timeBar.pct}%` }}
+                />
               </div>
 
-              <div className="mt-2 text-xs text-zinc-500">{Math.round(timeBar.pct)}%</div>
+              <div className="mt-2 text-xs text-zinc-500">
+                {Math.round(timeBar.pct)}%
+              </div>
             </div>
 
-            {/* ✅ Clear gating messages */}
+            {/* Clear gating messages */}
             {progressGate === "VOTE" && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                Progress is locked. You must participate in this poll to unlock results so far.
+                Progress is locked. You must participate in this poll to unlock
+                results so far.
                 <div className="mt-3">
                   <Link href={`/poll/${poll.id}`} className={btnPrimary}>
                     Participate
@@ -350,7 +371,9 @@ export default function PollProgressPage() {
                     </div>
                     <div className="mt-1 text-xs text-zinc-600">
                       {stats
-                        ? `${stats.totalVotes} ${stats.totalVotes > 1 ? "votes" : "vote"}`
+                        ? `${stats.totalVotes} ${
+                            stats.totalVotes > 1 ? "votes" : "vote"
+                          }`
                         : progressGate === "VOTE"
                         ? "locked (vote to unlock)"
                         : progressGate === "LOGIN"
@@ -362,7 +385,9 @@ export default function PollProgressPage() {
 
                 {!isOwner && (
                   <button
-                    onClick={() => addReminder(poll.id, "RESULTS", poll.dateEnd)}
+                    onClick={() =>
+                      addReminder(poll.id, "RESULTS", poll.dateEnd)
+                    }
                     className={btnPrimary}
                     type="button"
                   >
@@ -388,8 +413,12 @@ export default function PollProgressPage() {
                     >
                       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                         <div className="min-w-0">
-                          <div className="text-sm font-semibold text-zinc-900">{o.label}</div>
-                          <div className="mt-1 text-xs text-zinc-500">Option #{o.index + 1}</div>
+                          <div className="text-sm font-semibold text-zinc-900">
+                            {o.label}
+                          </div>
+                          <div className="mt-1 text-xs text-zinc-500">
+                            Option #{o.index + 1}
+                          </div>
                         </div>
 
                         <div className="text-sm font-medium text-zinc-700">
