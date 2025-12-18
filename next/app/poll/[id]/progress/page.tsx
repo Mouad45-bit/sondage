@@ -1,5 +1,4 @@
 // app/poll/[id]/progress/page.tsx
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -39,6 +38,8 @@ type PollStatsResponse = {
   totalVotes: number;
   options: OptionStatsResponse[];
 };
+
+type ProgressGate = null | "LOGIN" | "VOTE";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -81,9 +82,7 @@ function StatusBadge({ status }: { status: string }) {
     "inline-flex items-center rounded-full border px-2 py-0.5 text-sm font-semibold tracking-wide";
   if (s === "OPEN")
     return (
-      <span
-        className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}
-      >
+      <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>
         OPEN
       </span>
     );
@@ -111,15 +110,15 @@ export default function PollProgressPage() {
   const [stats, setStats] = useState<PollStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  // ✅ plus clair: progress peut être "bloqué" (vote/login), pas une "erreur API"
+  const [progressGate, setProgressGate] = useState<ProgressGate>(null);
+  const [progressError, setProgressError] = useState<string | null>(null);
 
-  const isOwner = useMemo(
-    () => (poll ? uid === poll.authorId : false),
-    [poll, uid]
-  );
+  // erreur uniquement pour le chargement du poll (vraie erreur)
+  const [pollError, setPollError] = useState<string | null>(null);
 
-  // tokens (comme create)
+  const isOwner = useMemo(() => (poll ? uid === poll.authorId : false), [poll, uid]);
+
   const btnPrimary =
     "cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
   const btnGhost =
@@ -128,38 +127,53 @@ export default function PollProgressPage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      setError(null);
-      setInfo(null);
+      setPollError(null);
+      setProgressGate(null);
+      setProgressError(null);
+      setStats(null);
 
       try {
-        const p = await api<PollResponse>(
-          `/api/polls/${encodeURIComponent(id)}`,
-          {
-            method: "GET",
-            auth: false,
-          }
-        );
+        // 1) poll: public
+        const p = await api<PollResponse>(`/api/polls/${encodeURIComponent(id)}`, {
+          method: "GET",
+          auth: false,
+        });
         setPoll(p);
 
-        const s = await api<PollStatsResponse>(
-          `/api/polls/${encodeURIComponent(id)}/progress`,
-          { method: "GET", auth: true }
-        );
-        setStats(s);
+        // 2) progress: protégé (doit être clair si 401/403)
+        try {
+          const s = await api<PollStatsResponse>(
+            `/api/polls/${encodeURIComponent(id)}/progress`,
+            { method: "GET", auth: true }
+          );
+          setStats(s);
+        } catch (e: any) {
+          const msg = String(e?.message || "");
+
+          // ⚠️ ton wrapper api() ne donne pas forcément "status".
+          // on détecte via message (souvent contient 401/403)
+          if (msg.includes("401")) {
+            setProgressGate("LOGIN");
+            setStats(null);
+            setProgressError(null);
+          } else if (msg.includes("403")) {
+            setProgressGate("VOTE");
+            setStats(null);
+            setProgressError(null);
+          } else {
+            setProgressGate(null);
+            setStats(null);
+            setProgressError(e?.message || "Impossible de charger l’avancement.");
+          }
+        }
       } catch (e: any) {
-        const msg = e?.message || "Impossible de charger l’avancement.";
-
-        // NOTE: ton backend refuse parfois le progress si pas voté
-        setInfo(
-          "Si le backend refuse l’accès à /progress : soit voter avant, soit autoriser l’owner côté backend."
-        );
-
-        setError(msg);
-        setStats(null);
+        setPoll(null);
+        setPollError(e?.message || "Poll not found.");
       } finally {
         setLoading(false);
       }
     }
+
     load();
   }, [id]);
 
@@ -199,15 +213,15 @@ export default function PollProgressPage() {
     );
   }
 
-  if (!poll) {
+  if (pollError || !poll) {
     return (
       <AuthGuard>
         <div className="min-h-screen bg-zinc-50">
           <main className="mx-auto max-w-6xl px-4 py-2 space-y-4">
             <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-              Poll not found.
+              {pollError || "Poll not found."}
             </div>
-            <button onClick={() => router.back()} className={btnGhost}>
+            <button onClick={() => router.back()} className={btnGhost} type="button">
               Back
             </button>
           </main>
@@ -222,14 +236,10 @@ export default function PollProgressPage() {
     <AuthGuard>
       <div className="min-h-screen bg-zinc-50">
         <main className="mx-auto max-w-6xl px-4 py-2 space-y-4">
-          {/* Header EXACTEMENT comme create */}
+          {/* Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
             <div className="flex items-center md:flex-1">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className={btnGhost}
-              >
+              <button type="button" onClick={() => router.back()} className={btnGhost}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </button>
@@ -242,9 +252,9 @@ export default function PollProgressPage() {
             <div className="flex md:flex-1 md:justify-end" />
           </div>
 
-          {/* Card unique (comme create) */}
+          {/* Card */}
           <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-4">
-            {/* Top row: title + badges */}
+            {/* Top row */}
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div className="min-w-0">
                 <div className="text-2xl uppercase font-semibold text-zinc-950 truncate">
@@ -273,7 +283,7 @@ export default function PollProgressPage() {
               </div>
             </div>
 
-            {/* Time progress block (same visual language) */}
+            {/* Time progress */}
             <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-2">
@@ -294,34 +304,38 @@ export default function PollProgressPage() {
               </div>
 
               <div className="mt-3 h-2 w-full rounded-full bg-zinc-200/60">
-                <div
-                  className="h-2 rounded-full bg-zinc-900"
-                  style={{ width: `${timeBar.pct}%` }}
-                />
+                <div className="h-2 rounded-full bg-zinc-900" style={{ width: `${timeBar.pct}%` }} />
               </div>
 
-              <div className="mt-2 text-xs text-zinc-500">
-                {Math.round(timeBar.pct)}%
-              </div>
+              <div className="mt-2 text-xs text-zinc-500">{Math.round(timeBar.pct)}%</div>
             </div>
 
-            {/* Messages */}
-            {info && (
+            {/* ✅ Clear gating messages */}
+            {progressGate === "VOTE" && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                {info}
+                Progress is locked. You must participate in this poll to unlock results so far.
+                <div className="mt-3">
+                  <Link href={`/poll/${poll.id}`} className={btnPrimary}>
+                    Participate
+                  </Link>
+                </div>
               </div>
             )}
 
-            {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {error}
-                <div className="mt-2 text-xs text-red-600">
-                  Si tu vois une erreur 400/404, corrige backend:{" "}
-                  <span className="font-medium">
-                    @PathVariable("id") String pollId
-                  </span>{" "}
-                  dans /progress.
+            {progressGate === "LOGIN" && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Please login to access progress.
+                <div className="mt-3">
+                  <Link href="/login" className={btnPrimary}>
+                    Login
+                  </Link>
                 </div>
+              </div>
+            )}
+
+            {progressError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {progressError}
               </div>
             )}
 
@@ -336,9 +350,11 @@ export default function PollProgressPage() {
                     </div>
                     <div className="mt-1 text-xs text-zinc-600">
                       {stats
-                        ? `${stats.totalVotes} ${
-                            stats.totalVotes > 1 ? "votes" : "vote"
-                          }`
+                        ? `${stats.totalVotes} ${stats.totalVotes > 1 ? "votes" : "vote"}`
+                        : progressGate === "VOTE"
+                        ? "locked (vote to unlock)"
+                        : progressGate === "LOGIN"
+                        ? "locked (login required)"
                         : "no data available"}
                     </div>
                   </div>
@@ -346,9 +362,7 @@ export default function PollProgressPage() {
 
                 {!isOwner && (
                   <button
-                    onClick={() =>
-                      addReminder(poll.id, "RESULTS", poll.dateEnd)
-                    }
+                    onClick={() => addReminder(poll.id, "RESULTS", poll.dateEnd)}
                     className={btnPrimary}
                     type="button"
                   >
@@ -359,7 +373,11 @@ export default function PollProgressPage() {
 
               {!stats ? (
                 <div className="mt-3 text-sm text-zinc-600">
-                  No progress data is available at this time.
+                  {progressGate === "VOTE"
+                    ? "Vote first to see live progress."
+                    : progressGate === "LOGIN"
+                    ? "Login to see live progress."
+                    : "No progress data is available at this time."}
                 </div>
               ) : (
                 <div className="mt-3 space-y-2">
@@ -370,12 +388,8 @@ export default function PollProgressPage() {
                     >
                       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                         <div className="min-w-0">
-                          <div className="text-sm font-semibold text-zinc-900">
-                            {o.label}
-                          </div>
-                          <div className="mt-1 text-xs text-zinc-500">
-                            Option #{o.index + 1}
-                          </div>
+                          <div className="text-sm font-semibold text-zinc-900">{o.label}</div>
+                          <div className="mt-1 text-xs text-zinc-500">Option #{o.index + 1}</div>
                         </div>
 
                         <div className="text-sm font-medium text-zinc-700">
