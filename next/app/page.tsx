@@ -366,7 +366,7 @@ export default function DashboardPage() {
 
               {/* Search */}
               <div className="grid gap-2 md:grid-cols-12 md:items-center">
-                <div className="md:col-span-10">
+                <div className="md:col-span-12">
                   <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white pl-3">
                     <Search className="h-4 w-4 text-zinc-500" />
                     <input
@@ -379,20 +379,6 @@ export default function DashboardPage() {
                       className="h-10 w-full bg-transparent text-sm text-zinc-900 pl-3 outline-none placeholder:text-zinc-500"
                     />
                   </div>
-                </div>
-
-                <div className="md:col-span-2">
-                  <select
-                    value={searchMode}
-                    onChange={(e) => {
-                      setSearchMode(e.target.value as SearchMode);
-                      setPage(0);
-                    }}
-                    className={inputBase}
-                  >
-                    <option value="title">Title</option>
-                    <option value="author">Author</option>
-                  </select>
                 </div>
               </div>
 
