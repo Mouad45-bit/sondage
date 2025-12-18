@@ -1,10 +1,13 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   async rewrites() {
-    const backend = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
-    return [{ source: "/backend/:path*", destination: `${backend}/:path*` }];
+    return [
+      {
+        source: "/api/:path*",
+        destination: "http://localhost:8080/api/:path*",
+      },
+    ];
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

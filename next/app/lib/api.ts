@@ -22,11 +22,16 @@ async function readJsonSafe(res: Response) {
   }
 }
 
-export async function api<T>(path: string, opts?: { method?: string; auth?: boolean; body?: any }) {
+export async function api<T>(
+  path: string,
+  opts?: { method?: string; auth?: boolean; body?: any }
+) {
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
   const url = baseUrl + path;
 
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
 
   if (opts?.auth) {
     const token = localStorage.getItem("token");
@@ -40,22 +45,13 @@ export async function api<T>(path: string, opts?: { method?: string; auth?: bool
   });
 
   if (!res.ok) {
-    // essaie de lire le message backend
-    let msg = "Erreur API";
-    try {
-      const ct = res.headers.get("content-type") || "";
-      if (ct.includes("application/json")) {
-        const j = await res.json();
-        msg = j?.message || j?.error || JSON.stringify(j);
-      } else {
-        const t = await res.text();
-        if (t) msg = t;
-      }
-    } catch {}
+    const body = await readJsonSafe(res);
+    const msg =
+      (body as any)?.message ||
+      (body as any)?.error ||
+      (typeof body === "string" ? body : "Erreur API");
 
-    const err: any = new Error(msg);
-    err.status = res.status;
-    throw err;
+    throw new ApiError(res.status, body, msg);
   }
 
   return (await res.json()) as T;
