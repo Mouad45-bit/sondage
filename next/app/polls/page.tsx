@@ -167,7 +167,7 @@ export default function MyPollsPage() {
   const btnPrimary =
     "cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
   const btnDanger =
-    "cursor-pointer inline-flex items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:opacity-60";
+    "cursor-pointer inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:opacity-60";
 
   return (
     <AuthGuard>
@@ -349,7 +349,6 @@ export default function MyPollsPage() {
                           onClick={() => cancelPoll(p)}
                           disabled={loading || deletingId === p.id}
                           className={btnDanger}
-                          title="Cancel (delete) poll"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           {deletingId === p.id ? "Cancelling.." : "Cancel poll"}
