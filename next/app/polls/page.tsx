@@ -1,5 +1,4 @@
 // app/polls/page.tsx
-
 "use client";
 
 import Link from "next/link";
@@ -14,6 +13,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Eye,
+  Trash2,
 } from "lucide-react";
 
 type PollStatus = "DRAFT" | "OPEN" | "CLOSED";
@@ -50,9 +50,7 @@ function StatusBadge({ status }: { status: string }) {
     "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border";
   if (s === "OPEN")
     return (
-      <span
-        className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}
-      >
+      <span className={`${base} border-emerald-200 bg-emerald-50 text-emerald-700`}>
         OPEN
       </span>
     );
@@ -74,10 +72,20 @@ export default function MyPollsPage() {
   const [polls, setPolls] = useState<PollResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
   const [meta, setMeta] = useState<{ page: number; totalPages?: number }>({
     page: 0,
   });
   const [page, setPage] = useState(0);
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let t: any;
+    if (toast) t = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   async function fetchMyPolls(p = page) {
     setLoading(true);
@@ -108,6 +116,38 @@ export default function MyPollsPage() {
     }
   }
 
+  async function cancelPoll(poll: PollResponse) {
+    const ok = window.confirm(
+      `Cancel this DRAFT poll?\n\n"${poll.title}"\n\nThis will permanently delete it.`
+    );
+    if (!ok) return;
+
+    setDeletingId(poll.id);
+    setError(null);
+
+    try {
+      await api<void>(`/api/polls/${encodeURIComponent(poll.id)}`, {
+        method: "DELETE",
+        auth: true,
+      });
+
+      setToast("Poll cancelled (deleted).");
+
+      // si on vient de supprimer le dernier item de la page, revenir à la page précédente
+      if (polls.length === 1 && page > 0) {
+        setPage((x) => Math.max(0, x - 1));
+        return; // l'useEffect va refetch
+      }
+
+      // sinon refresh la même page
+      fetchMyPolls(page);
+    } catch (e: any) {
+      setError(e?.message || "Erreur lors de la suppression.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   useEffect(() => {
     fetchMyPolls(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,6 +162,12 @@ export default function MyPollsPage() {
   const totalPages = meta.totalPages ?? 1;
   const canPrev = page > 0;
   const canNext = page < totalPages - 1;
+
+  // tokens
+  const btnPrimary =
+    "cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60";
+  const btnDanger =
+    "cursor-pointer inline-flex items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:opacity-60";
 
   return (
     <AuthGuard>
@@ -142,14 +188,11 @@ export default function MyPollsPage() {
             </Link>
           </div>
 
-          {/* Filters card (même look que dashboard) */}
+          {/* Filters card */}
           <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <h2 className="mb-4 text-xl font-semibold text-zinc-950">
-              Filters
-            </h2>
+            <h2 className="mb-4 text-xl font-semibold text-zinc-950">Filters</h2>
 
             <div className="grid gap-4">
-              {/* Search + refresh row */}
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="flex w-full items-center gap-2 rounded-xl border border-zinc-200 bg-white pl-3">
                   <Search className="h-4 w-4 text-zinc-500" />
@@ -168,13 +211,19 @@ export default function MyPollsPage() {
                   onClick={() => fetchMyPolls(page)}
                   className="cursor-pointer inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:opacity-60"
                   disabled={loading}
+                  type="button"
                 >
                   <RefreshCcw className="h-4 w-4" />
                   Refresh
                 </button>
               </div>
 
-              {/* Error */}
+              {toast && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  {toast}
+                </div>
+              )}
+
               {error && (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
                   {error}
@@ -190,9 +239,7 @@ export default function MyPollsPage() {
                 <span className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-800">
                   {loading ? "Loading.." : `${filtered.length} displayed`}
                   {meta.totalPages !== undefined
-                    ? ` · ${meta.totalPages} ${
-                        meta.totalPages > 1 ? "pages" : "page"
-                      }`
+                    ? ` · ${meta.totalPages} ${meta.totalPages > 1 ? "pages" : "page"}`
                     : ""}
                 </span>
               </div>
@@ -237,6 +284,7 @@ export default function MyPollsPage() {
 
             {filtered.map((p) => {
               const st = String(p.status).toUpperCase();
+              const isDraft = st === "DRAFT";
 
               return (
                 <article
@@ -264,7 +312,6 @@ export default function MyPollsPage() {
                       </div>
                     </div>
 
-                    {/* Actions top-right */}
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/poll/${p.id}`}
@@ -280,30 +327,34 @@ export default function MyPollsPage() {
                   {/* Quick actions */}
                   <div className="mt-4 flex flex-wrap gap-2">
                     {st === "OPEN" && (
-                      <Link
-                        href={`/poll/${p.id}/progress`}
-                        className="cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
-                      >
+                      <Link href={`/poll/${p.id}/progress`} className={btnPrimary}>
                         See progress
                       </Link>
                     )}
 
                     {st === "CLOSED" && (
-                      <Link
-                        href={`/poll/${p.id}/results`}
-                        className="cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
-                      >
+                      <Link href={`/poll/${p.id}/results`} className={btnPrimary}>
                         See results
                       </Link>
                     )}
 
-                    {st === "DRAFT" && (
-                      <Link
-                        href={`/poll/${p.id}/update`}
-                        className="cursor-pointer inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold !text-white shadow-sm hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
-                      >
-                        Update poll
-                      </Link>
+                    {isDraft && (
+                      <>
+                        <Link href={`/poll/${p.id}/update`} className={btnPrimary}>
+                          Update poll
+                        </Link>
+
+                        <button
+                          type="button"
+                          onClick={() => cancelPoll(p)}
+                          disabled={loading || deletingId === p.id}
+                          className={btnDanger}
+                          title="Cancel (delete) poll"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {deletingId === p.id ? "Cancelling.." : "Cancel poll"}
+                        </button>
+                      </>
                     )}
                   </div>
                 </article>
