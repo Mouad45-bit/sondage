@@ -25,29 +25,21 @@ function cx(...classes: Array<string | false | undefined | null>) {
 }
 
 async function askBot(userText: string) {
-  // adapte l’URL à TON backend
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
-  const url = `${baseUrl}/api/bot/chat`;
+  const url = "/api/bot/chat"; // ✅ Next API route (même domaine)
 
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    // Si tu utilises JWT: ajoute Authorization: `Bearer ${token}`
     body: JSON.stringify({ message: userText }),
   });
 
+  // même logique “tolérante”
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(`Bot API error: ${res.status}`);
+    throw new Error(data?.error ?? `Bot API error: ${res.status}`);
   }
 
-  const data = await res.json();
-
-  // On accepte plusieurs formats possibles pour éviter de bloquer
-  return (data?.reply ??
-    data?.message ??
-    data?.text ??
-    "I didn't understand the server's response.") as string;
+  return (data?.reply ?? data?.message ?? data?.text ?? "No reply.") as string;
 }
 
 export function BotChatWidget() {
@@ -56,7 +48,6 @@ export function BotChatWidget() {
   const [sending, setSending] = useState(false);
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    // (optionnel) petite persistence locale
     if (typeof window === "undefined") return [];
     const raw = localStorage.getItem("bot_chat_messages");
     if (!raw) return [];
@@ -73,7 +64,6 @@ export function BotChatWidget() {
 
   const panelRef = useRef<HTMLDivElement | null>(null);
 
-  // Click-outside pour fermer
   useEffect(() => {
     if (!open) return;
 
@@ -102,7 +92,6 @@ export function BotChatWidget() {
   );
 
   useEffect(() => {
-    // auto-scroll à l’ouverture / nouveaux messages
     if (!open) return;
     const el = panelRef.current?.querySelector("[data-scroll='true']");
     if (!el) return;
@@ -147,8 +136,7 @@ export function BotChatWidget() {
         createdAt: Date.now(),
       };
       setMessages((prev) => [...prev, botMsg]);
-    } catch (e) {
-      // non bloquant: on affiche une bulle d’erreur, et on continue
+    } catch {
       const botMsg: ChatMessage = {
         id: uid(),
         role: "bot",
@@ -174,15 +162,13 @@ export function BotChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-[60]">
-      {/* Popup */}
+    <div className="fixed bottom-6 right-6 z-[60] pointer-events-none">
       {open && (
         <div
           ref={panelRef}
-          className="absolute bottom-16 right-0 w-[360px] max-w-[calc(100vw-3rem)]"
+          className="absolute bottom-16 right-0 w-[360px] max-w-[calc(100vw-3rem)] pointer-events-auto"
         >
           <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white/95 shadow-xl backdrop-blur h-[520px] max-h-[calc(100vh-8rem)] flex flex-col">
-            {/* Header */}
             <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
               <div className="min-w-0 text-sm font-semibold text-zinc-900">
                 Bot Assistant
@@ -207,7 +193,6 @@ export function BotChatWidget() {
               </div>
             </div>
 
-            {/* Messages */}
             <div data-scroll="true" className="flex-1 overflow-auto px-4 py-3">
               {messages.length > 0 && (
                 <div className="space-y-3">
@@ -231,6 +216,7 @@ export function BotChatWidget() {
                       </div>
                     </div>
                   ))}
+
                   {sending && (
                     <div className="flex justify-start">
                       <div className="inline-flex items-center gap-2 rounded-2xl bg-zinc-100 px-3 py-2 text-sm text-zinc-700">
@@ -243,7 +229,6 @@ export function BotChatWidget() {
               )}
             </div>
 
-            {/* Input */}
             <div className="border-t border-zinc-200 p-3">
               <div className="flex items-center gap-2">
                 <input
@@ -271,15 +256,16 @@ export function BotChatWidget() {
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       )}
 
-      {/* Bouton flottant */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cx(
+          "pointer-events-auto",
           "inline-flex h-14 w-14 items-center justify-center rounded-full",
           "bg-zinc-900 text-white shadow-lg hover:bg-zinc-800",
           "border border-white/10 cursor-pointer"
